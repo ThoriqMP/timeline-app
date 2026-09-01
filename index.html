@@ -23,101 +23,113 @@
           </div>
           <div class="brand-info">
             <span class="brand-name">Timeline<span>Flow</span></span>
-            <span class="plan-pill" id="currentPlanLabelBadge">Plan: Work Routine</span>
+            <button class="plan-pill-btn" id="currentPlanBtn" title="Ganti atau Kelola Plan Timeline">
+              <span id="currentPlanLabelBadge">Plan: Work Routine</span>
+              <i class="fa-solid fa-chevron-down plan-chevron"></i>
+            </button>
           </div>
         </div>
+      </div>
 
-        <!-- Mode Switcher: Daily Timeline vs 1-Year Roadmap vs Itinerary Planner -->
-        <div class="view-mode-switcher">
-          <button class="view-switch-btn active" id="viewModeDailyBtn">
+      <!-- Center: Seamless Mode Switcher & Dynamic Informative Stats -->
+      <div class="nav-center-unified">
+        <!-- Segmented Mode Switcher -->
+        <nav class="seamless-nav-switcher">
+          <button class="nav-tab-btn active" id="viewModeDailyBtn">
             <i class="fa-solid fa-calendar-day"></i>
             <span>Jadwal Harian</span>
           </button>
-          <button class="view-switch-btn" id="viewModeRoadmapBtn">
+          <button class="nav-tab-btn" id="viewModeRoadmapBtn">
             <i class="fa-solid fa-map-location-dot"></i>
-            <span>1-Year Roadmap (4Q)</span>
+            <span>1-Year Roadmap</span>
           </button>
-          <button class="view-switch-btn" id="viewModeItineraryBtn">
+          <button class="nav-tab-btn" id="viewModeItineraryBtn">
             <i class="fa-solid fa-plane-departure"></i>
             <span>Itinerary Planner</span>
           </button>
+        </nav>
+
+        <!-- Informative Contextual Stats Capsule -->
+        <div class="stats-capsule-wrap">
+          <div class="stats-capsule" id="headerStatsDaily">
+            <div class="stat-pill-item">
+              <i class="fa-solid fa-list-check icon-accent-cyan"></i>
+              <span class="stat-num" id="totalTasksCount">0</span>
+              <span class="stat-tag">Tugas</span>
+            </div>
+            <div class="stat-capsule-divider"></div>
+            <div class="stat-pill-item">
+              <i class="fa-solid fa-bullseye icon-accent-pink"></i>
+              <span class="stat-num" id="totalGoalsCount">0</span>
+              <span class="stat-tag">Target</span>
+            </div>
+          </div>
+
+          <div class="stats-capsule" id="headerStatsRoadmap" style="display: none;">
+            <div class="stat-pill-item">
+              <i class="fa-solid fa-sack-dollar icon-accent-emerald"></i>
+              <span class="stat-num" id="totalYearTargetRupiah">Rp 0</span>
+              <span class="stat-tag">Target 1Y</span>
+            </div>
+            <div class="stat-capsule-divider"></div>
+            <div class="stat-pill-item">
+              <i class="fa-solid fa-signs-post icon-accent-purple"></i>
+              <span class="stat-num" id="totalRoadmapItemsCount">0</span>
+              <span class="stat-tag">Inisiatif</span>
+            </div>
+          </div>
+
+          <div class="stats-capsule" id="headerStatsItinerary" style="display: none;">
+            <div class="stat-pill-item">
+              <i class="fa-solid fa-plane-departure icon-accent-sky"></i>
+              <span class="stat-num" id="totalTripsCount">0</span>
+              <span class="stat-tag">Trip</span>
+            </div>
+            <div class="stat-capsule-divider"></div>
+            <div class="stat-pill-item">
+              <i class="fa-solid fa-location-dot icon-accent-amber"></i>
+              <span class="stat-num" id="totalActivitiesCount">0</span>
+              <span class="stat-tag">Destinasi</span>
+            </div>
+            <div class="stat-capsule-divider"></div>
+            <div class="stat-pill-item">
+              <i class="fa-solid fa-wallet icon-accent-emerald"></i>
+              <span class="stat-num" id="totalItineraryExpense">Rp 0</span>
+              <span class="stat-tag">Est. Biaya</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="nav-center">
-        <div class="stats-group" id="headerStatsDaily">
-          <div class="stat-item">
-            <span class="stat-icon"><i class="fa-solid fa-list-check"></i></span>
-            <span class="stat-val" id="totalTasksCount">0</span>
-            <span class="stat-lbl">Tugas Terjadwal</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-icon"><i class="fa-solid fa-bullseye"></i></span>
-            <span class="stat-val" id="totalGoalsCount">0</span>
-            <span class="stat-lbl">Target Aktif</span>
-          </div>
-        </div>
-
-        <div class="stats-group" id="headerStatsRoadmap" style="display: none;">
-          <div class="stat-item">
-            <span class="stat-icon"><i class="fa-solid fa-sack-dollar"></i></span>
-            <span class="stat-val" id="totalYearTargetRupiah">Rp 0</span>
-            <span class="stat-lbl">Target Omset 1 Tahun</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-icon"><i class="fa-solid fa-signs-post"></i></span>
-            <span class="stat-val" id="totalRoadmapItemsCount">0</span>
-            <span class="stat-lbl">Inisiatif Roadmap</span>
-          </div>
-        </div>
-
-        <div class="stats-group" id="headerStatsItinerary" style="display: none;">
-          <div class="stat-item">
-            <span class="stat-icon"><i class="fa-solid fa-plane"></i></span>
-            <span class="stat-val" id="totalTripsCount">0</span>
-            <span class="stat-lbl">Total Perjalanan</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-icon"><i class="fa-solid fa-location-dot"></i></span>
-            <span class="stat-val" id="totalActivitiesCount">0</span>
-            <span class="stat-lbl">Destinasi</span>
-          </div>
-          <div class="stat-divider"></div>
-          <div class="stat-item">
-            <span class="stat-icon"><i class="fa-solid fa-wallet"></i></span>
-            <span class="stat-val" id="totalItineraryExpense">Rp 0</span>
-            <span class="stat-lbl">Total Est. Biaya</span>
-          </div>
-        </div>
-      </div>
-
+      <!-- Right: Goals, User Profile, and Unified Action Toolbar -->
       <div class="nav-right">
         <!-- User Profile & Role Switcher -->
-        <button id="userProfileBtn" class="btn-user-role" title="Profil Pengguna & Role Otorisasi">
-          <span class="user-avatar-badge" id="navUserAvatar"><i class="fa-solid fa-user"></i></span>
+        <button id="userProfileBtn" class="btn-seamless-user" title="Profil Pengguna & Role Otorisasi">
+          <span class="user-avatar-badge" id="navUserAvatar"><i class="fa-solid fa-user-astronaut"></i></span>
           <span class="user-role-text" id="navUserRoleText">Traveler</span>
+          <i class="fa-solid fa-chevron-down role-chevron"></i>
         </button>
 
         <!-- Goals Calendar Button -->
-        <button id="openGoalsBtn" class="btn-gradient-goals">
-          <span class="btn-goals-icon"><i class="fa-solid fa-bullseye"></i></span>
-          <span>Goals Calendar</span>
+        <button id="openGoalsBtn" class="btn-seamless-goals" title="Buka Kalender Goals & Milestones">
+          <span class="goals-icon-glow"><i class="fa-solid fa-bullseye"></i></span>
+          <span class="goals-btn-text">Goals</span>
           <span class="badge-goals-count" id="headerGoalsBadge">0</span>
         </button>
 
-        <div class="nav-actions">
-          <button id="exportDataBtn" class="icon-btn" title="Backup / Ekspor Data">
+        <!-- Unified Tool Dock -->
+        <div class="nav-action-toolbar">
+          <button id="exportDataBtn" class="nav-tool-btn" title="Backup / Ekspor Data (JSON)">
             <i class="fa-solid fa-file-arrow-down"></i>
           </button>
-          <button id="importDataBtn" class="icon-btn" title="Restore / Impor Data">
+          <button id="importDataBtn" class="nav-tool-btn" title="Restore / Impor Data (JSON)">
             <i class="fa-solid fa-file-arrow-up"></i>
           </button>
           <input type="file" id="importFileInput" accept=".json" style="display: none;" />
           
-          <button id="themeToggleBtn" class="icon-btn" title="Ganti Mode Gelap / Terang">
+          <div class="tool-divider"></div>
+
+          <button id="themeToggleBtn" class="nav-tool-btn theme-toggle-btn" title="Ganti Mode Gelap / Terang">
             <i class="fa-solid fa-moon"></i>
           </button>
         </div>

@@ -519,6 +519,7 @@
       headerStatsRoadmap: document.getElementById('headerStatsRoadmap'),
       headerStatsItinerary: document.getElementById('headerStatsItinerary'),
       currentPlanLabelBadge: document.getElementById('currentPlanLabelBadge'),
+      currentPlanBtn: document.getElementById('currentPlanBtn'),
       totalTasksCount: document.getElementById('totalTasksCount'),
       totalGoalsCount: document.getElementById('totalGoalsCount'),
       totalYearTargetRupiah: document.getElementById('totalYearTargetRupiah'),
@@ -1192,7 +1193,7 @@
     if (DOM.totalGoalsCount) DOM.totalGoalsCount.textContent = totalGoals;
     if (DOM.headerGoalsBadge) DOM.headerGoalsBadge.textContent = totalGoals;
     if (DOM.totalYearTargetRupiah) DOM.totalYearTargetRupiah.textContent = formatRupiah(totalYearTarget);
-    if (DOM.totalRoadmapItemsCount) DOM.totalRoadmapItemsCount.textContent = `${totalRoadmapItems} Inisiatif`;
+    if (DOM.totalRoadmapItemsCount) DOM.totalRoadmapItemsCount.textContent = totalRoadmapItems;
     if (DOM.totalTripsCount) DOM.totalTripsCount.textContent = totalTrips;
     if (DOM.totalActivitiesCount) DOM.totalActivitiesCount.textContent = totalActivities;
     if (DOM.totalItineraryExpense) DOM.totalItineraryExpense.textContent = formatRupiah(totalExpense);
@@ -3175,6 +3176,11 @@
   // ==========================================================================
 
   function setupEventListeners() {
+    // Plan Pill Button
+    if (DOM.currentPlanBtn) {
+      DOM.currentPlanBtn.addEventListener('click', () => openPlanModal());
+    }
+
     // Mode Switcher Listeners
     if (DOM.viewModeDailyBtn) {
       DOM.viewModeDailyBtn.addEventListener('click', () => switchViewMode('daily'));
