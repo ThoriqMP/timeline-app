@@ -26,10 +26,10 @@
   ];
 
   const QUARTERS_META = {
-    Q1: { label: 'Q1 (Kuartal 1)', months: 'Januari - Maret', defaultTarget: 250000000 },
-    Q2: { label: 'Q2 (Kuartal 2)', months: 'April - Juni', defaultTarget: 350000000 },
-    Q3: { label: 'Q3 (Kuartal 3)', months: 'Juli - September', defaultTarget: 350000000 },
-    Q4: { label: 'Q4 (Kuartal 4)', months: 'Oktober - Desember', defaultTarget: 300000000 }
+    Q1: { label: 'Q1 (Kuartal 1)', months: 'Januari - Maret', defaultTarget: 250000000, defaultStart: '2026-01-01', defaultEnd: '2026-03-31' },
+    Q2: { label: 'Q2 (Kuartal 2)', months: 'April - Juni', defaultTarget: 350000000, defaultStart: '2026-04-01', defaultEnd: '2026-06-30' },
+    Q3: { label: 'Q3 (Kuartal 3)', months: 'Juli - September', defaultTarget: 350000000, defaultStart: '2026-07-01', defaultEnd: '2026-09-30' },
+    Q4: { label: 'Q4 (Kuartal 4)', months: 'Oktober - Desember', defaultTarget: 300000000, defaultStart: '2026-10-01', defaultEnd: '2026-12-31' }
   };
 
   // Time & Date Helpers
@@ -91,7 +91,20 @@
         name: 'Work Routine (Utama)',
         days: {
           senin: [
-            { id: 't1', startTime: '08:00', endTime: '08:35', title: 'Task 1 - Cek Whatsapp & Follow Up Lead', category: 'work', color: 'blue', completed: false },
+            {
+              id: 't1',
+              startTime: '08:00',
+              endTime: '08:35',
+              title: 'Task 1 - Cek Whatsapp & Follow Up Lead',
+              category: 'work',
+              color: 'blue',
+              completed: false,
+              items: [
+                { id: 'sub-1', text: 'Balas pesan prospek masuk', completed: true },
+                { id: 'sub-2', text: 'Kirim penawaran proposal harga', completed: false },
+                { id: 'sub-3', text: 'Update database status lead', completed: false }
+              ]
+            },
             { id: 't2', startTime: '08:40', endTime: '10:00', title: 'Sprint Review & Development', category: 'work', color: 'purple', completed: false },
             { id: 't3', startTime: '10:05', endTime: '11:30', title: 'Client Sync & Demo Fitur', category: 'meeting', color: 'emerald', completed: false }
           ],
@@ -496,7 +509,8 @@
     selectedItineraryDay: 'all',
     undoStack: [],
     pendingConfirmAction: null,
-    pendingDragAction: null
+    pendingDragAction: null,
+    tempTaskItems: []
   };
 
   let DOM = {};
@@ -606,6 +620,10 @@
       taskTitle: document.getElementById('taskTitle'),
       taskCategory: document.getElementById('taskCategory'),
       taskColor: document.getElementById('taskColor'),
+      taskItemsCountBadge: document.getElementById('taskItemsCountBadge'),
+      newTaskItemInput: document.getElementById('newTaskItemInput'),
+      addTaskItemBtn: document.getElementById('addTaskItemBtn'),
+      taskModalItemsList: document.getElementById('taskModalItemsList'),
       closeTaskModalBtn: document.getElementById('closeTaskModalBtn'),
       cancelTaskModalBtn: document.getElementById('cancelTaskModalBtn'),
 
@@ -662,6 +680,9 @@
       quarterMetaModalTitle: document.getElementById('quarterMetaModalTitle'),
       quarterMetaForm: document.getElementById('quarterMetaForm'),
       quarterMetaKey: document.getElementById('quarterMetaKey'),
+      quarterMetaStartDate: document.getElementById('quarterMetaStartDate'),
+      quarterMetaEndDate: document.getElementById('quarterMetaEndDate'),
+      quarterMetaPeriodLabel: document.getElementById('quarterMetaPeriodLabel'),
       quarterMetaTargetRupiah: document.getElementById('quarterMetaTargetRupiah'),
       quarterRupiahPreview: document.getElementById('quarterRupiahPreview'),
       quarterMetaStrategy: document.getElementById('quarterMetaStrategy'),
@@ -1291,6 +1312,34 @@
             }
           }
 
+          const subitems = task.items && Array.isArray(task.items) ? task.items : [];
+          const totalSubitems = subitems.length;
+          const completedSubitems = subitems.filter(it => it.completed).length;
+          const allSubitemsDone = totalSubitems > 0 && completedSubitems === totalSubitems;
+          const subitemsPct = totalSubitems > 0 ? Math.round((completedSubitems / totalSubitems) * 100) : 0;
+
+          let subitemsHtml = '';
+          if (totalSubitems > 0) {
+            subitemsHtml = `
+              <div class="task-subitems-summary">
+                <span class="task-subitems-badge ${allSubitemsDone ? 'all-done' : ''}">
+                  <i class="fa-solid fa-list-check"></i> ${completedSubitems}/${totalSubitems} sub-item
+                </span>
+                <div class="task-subitems-track">
+                  <div class="task-subitems-fill ${allSubitemsDone ? 'all-done' : ''}" style="width: ${subitemsPct}%"></div>
+                </div>
+              </div>
+              <div class="task-subitems-list">
+                ${subitems.map(sub => `
+                  <div class="task-subitem-item ${sub.completed ? 'is-done' : ''}">
+                    <input type="checkbox" class="subitem-checkbox" ${sub.completed ? 'checked' : ''} data-sub-id="${escapeHtml(sub.id)}" />
+                    <span class="subitem-text">${escapeHtml(sub.text)}</span>
+                  </div>
+                `).join('')}
+              </div>
+            `;
+          }
+
           const card = document.createElement('div');
           card.className = `task-card color-${task.color || 'blue'} ${task.completed ? 'is-completed' : ''}`;
           card.dataset.taskId = task.id;
@@ -1310,10 +1359,20 @@
               <input type="checkbox" class="custom-checkbox" ${task.completed ? 'checked' : ''} title="Tandai Selesai" />
               <span class="task-text">${escapeHtml(task.title)}</span>
             </div>
+            ${subitemsHtml}
             <div class="task-card-footer">
               <span class="task-tag">${getCategoryLabel(task.category)}</span>
             </div>
           `;
+
+          card.querySelectorAll('.subitem-checkbox').forEach(subChk => {
+            subChk.addEventListener('click', (e) => e.stopPropagation());
+            subChk.addEventListener('change', (e) => {
+              e.stopPropagation();
+              const subId = subChk.dataset.subId;
+              toggleSubitemCompleted(day.key, task.id, subId, e.target.checked);
+            });
+          });
 
           card.addEventListener('dragstart', (e) => {
             card.classList.add('is-dragging');
@@ -1355,8 +1414,70 @@
   }
 
   // ==========================================================================
-  // TASK CRUD (With 5-Minute Break Auto-Fill & Conflict Check)
+  // TASK CRUD & SUB-ITEMS (1 Task : N Items)
   // ==========================================================================
+
+  function renderModalTaskItems() {
+    if (!DOM.taskModalItemsList) return;
+    DOM.taskModalItemsList.innerHTML = '';
+    const items = state.tempTaskItems || [];
+
+    if (DOM.taskItemsCountBadge) {
+      DOM.taskItemsCountBadge.textContent = `${items.length} item`;
+    }
+
+    if (items.length === 0) {
+      DOM.taskModalItemsList.innerHTML = `
+        <div style="text-align:center; padding: 12px 6px; color: var(--text-dim); font-size: 0.74rem;">
+          Belum ada sub-item pekerjaan. Ketik di atas lalu klik Tambah.
+        </div>
+      `;
+      return;
+    }
+
+    items.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.className = 'task-modal-item-row';
+      row.innerHTML = `
+        <div class="task-modal-item-left">
+          <input type="checkbox" class="subitem-checkbox" ${item.completed ? 'checked' : ''} title="Status Selesai" />
+          <span class="task-modal-item-text ${item.completed ? 'is-done' : ''}">${escapeHtml(item.text)}</span>
+        </div>
+        <button type="button" class="btn-del-item" title="Hapus Sub-item"><i class="fa-solid fa-trash-can"></i></button>
+      `;
+
+      const chk = row.querySelector('.subitem-checkbox');
+      chk.addEventListener('change', (e) => {
+        item.completed = e.target.checked;
+        renderModalTaskItems();
+      });
+
+      const delBtn = row.querySelector('.btn-del-item');
+      delBtn.addEventListener('click', () => {
+        state.tempTaskItems.splice(idx, 1);
+        renderModalTaskItems();
+      });
+
+      DOM.taskModalItemsList.appendChild(row);
+    });
+  }
+
+  function handleAddModalTaskItem() {
+    if (!DOM.newTaskItemInput) return;
+    const text = DOM.newTaskItemInput.value.trim();
+    if (!text) return;
+
+    if (!state.tempTaskItems) state.tempTaskItems = [];
+    state.tempTaskItems.push({
+      id: generateId('item'),
+      text: text,
+      completed: false
+    });
+
+    DOM.newTaskItemInput.value = '';
+    renderModalTaskItems();
+    DOM.newTaskItemInput.focus();
+  }
 
   function openTaskModal(dayKey, taskId = null) {
     state.editingTaskId = taskId;
@@ -1373,17 +1494,23 @@
         DOM.taskTitle.value = task.title || '';
         DOM.taskCategory.value = task.category || 'work';
         DOM.taskColor.value = task.color || 'blue';
+        state.tempTaskItems = task.items && Array.isArray(task.items) ? JSON.parse(JSON.stringify(task.items)) : [];
+      } else {
+        state.tempTaskItems = [];
       }
     } else {
       DOM.taskModalTitle.textContent = 'Tambah Tugas Baru';
-      // Auto-calculate next available slot with +5 minute break!
       const suggested = getSuggestedNextTimeSlot(dayKey);
       DOM.taskStartTime.value = suggested.startTime;
       DOM.taskEndTime.value = suggested.endTime;
       DOM.taskTitle.value = '';
       DOM.taskCategory.value = 'work';
       DOM.taskColor.value = 'blue';
+      state.tempTaskItems = [];
     }
+
+    if (DOM.newTaskItemInput) DOM.newTaskItemInput.value = '';
+    renderModalTaskItems();
 
     DOM.taskModalOverlay.classList.add('is-active');
     setTimeout(() => DOM.taskTitle.focus(), 50);
@@ -1393,6 +1520,7 @@
     DOM.taskModalOverlay.classList.remove('is-active');
     DOM.taskForm.reset();
     state.editingTaskId = null;
+    state.tempTaskItems = [];
   }
 
   function handleTaskFormSubmit(e) {
@@ -1403,7 +1531,6 @@
     const startTime = DOM.taskStartTime.value;
     const endTime = DOM.taskEndTime.value;
 
-    // Validate 5-minute break rule and time conflict
     const validation = validateTaskTimeSlot(dayKey, startTime, endTime, taskId || null);
     if (!validation.valid) {
       showToast(validation.message, 'error');
@@ -1411,6 +1538,7 @@
       return;
     }
 
+    const existingTask = taskId ? (activePlan.days[dayKey] || []).find(t => t.id === taskId) : null;
     const taskObj = {
       id: taskId || generateId('task'),
       startTime: startTime,
@@ -1418,7 +1546,8 @@
       title: DOM.taskTitle.value.trim(),
       category: DOM.taskCategory.value,
       color: DOM.taskColor.value,
-      completed: false
+      completed: existingTask ? existingTask.completed : false,
+      items: (state.tempTaskItems || []).slice()
     };
 
     if (!activePlan.days[dayKey]) {
@@ -1468,10 +1597,38 @@
       const task = activePlan.days[dayKey].find(t => t.id === taskId);
       if (task) {
         task.completed = isCompleted;
+        if (task.items && Array.isArray(task.items)) {
+          task.items.forEach(it => { it.completed = isCompleted; });
+        }
         saveData();
         renderTimelineGrid();
+        renderHeaderStats();
       }
     }
+  }
+
+  function toggleSubitemCompleted(dayKey, taskId, subitemId, isCompleted) {
+    const activePlan = getActivePlan();
+    if (!activePlan || !activePlan.days || !activePlan.days[dayKey]) return;
+    const task = activePlan.days[dayKey].find(t => t.id === taskId);
+    if (!task || !task.items) return;
+
+    const subitem = task.items.find(it => it.id === subitemId);
+    if (!subitem) return;
+
+    subitem.completed = isCompleted;
+
+    const allDone = task.items.length > 0 && task.items.every(it => it.completed);
+    if (allDone && !task.completed) {
+      task.completed = true;
+      showToast(`Semua sub-item "${task.title}" selesai! 🎉`);
+    } else if (!allDone && task.completed && !isCompleted) {
+      task.completed = false;
+    }
+
+    saveData();
+    renderTimelineGrid();
+    renderHeaderStats();
   }
 
   function clearCompletedTasks() {
@@ -1480,7 +1637,13 @@
     DAYS_OF_WEEK.forEach(day => {
       if (activePlan.days[day.key]) {
         activePlan.days[day.key].forEach(t => {
-          if (t.completed) completedCount++;
+          if (t.completed) {
+            t.completed = false;
+            if (t.items && Array.isArray(t.items)) {
+              t.items.forEach(it => { it.completed = false; });
+            }
+            completedCount++;
+          }
         });
       }
     });
@@ -1712,6 +1875,8 @@
 
       items.sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''));
 
+      const displayMonths = qData.periodLabel || (qData.startDate && qData.endDate ? `${formatDateIndo(qData.startDate)} - ${formatDateIndo(qData.endDate)}` : meta.months);
+
       const colEl = document.createElement('div');
       colEl.className = `quarter-column ${isCurrentQ ? 'is-current-q' : ''}`;
       colEl.dataset.quarter = qKey;
@@ -1722,9 +1887,9 @@
             <div class="quarter-title-wrap">
               <span class="quarter-title">${meta.label}</span>
               ${isCurrentQ ? '<span class="day-pill-today">Aktif</span>' : ''}
-              <span class="quarter-months-badge">${meta.months}</span>
+              <span class="quarter-months-badge is-clickable" title="Klik untuk ubah tanggal & target kuartal">${escapeHtml(displayMonths)}</span>
             </div>
-            <button class="btn-edit-quarter" title="Edit Target & Strategi Kuartal">✏️ Target</button>
+            <button class="btn-edit-quarter" title="Edit Target & Tanggal Kuartal">✏️ Target</button>
           </div>
 
           <div class="quarter-financial-pill">
@@ -1743,6 +1908,35 @@
         </div>
       `;
 
+      // Drag over and drop on quarter column
+      colEl.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        colEl.classList.add('is-drag-target');
+      });
+
+      colEl.addEventListener('dragleave', (e) => {
+        if (!colEl.contains(e.relatedTarget)) {
+          colEl.classList.remove('is-drag-target');
+        }
+      });
+
+      colEl.addEventListener('drop', (e) => {
+        e.preventDefault();
+        colEl.classList.remove('is-drag-target');
+        try {
+          const raw = e.dataTransfer.getData('text/plain');
+          if (raw) {
+            const dragData = JSON.parse(raw);
+            if (dragData && dragData.roadmapItemId && dragData.sourceQuarterKey) {
+              moveRoadmapItem(dragData.sourceQuarterKey, qKey, dragData.roadmapItemId);
+            }
+          }
+        } catch (err) {
+          console.error('Roadmap drop error:', err);
+        }
+      });
+
       const qBody = colEl.querySelector(`#qBody-${qKey}`);
 
       if (items.length === 0) {
@@ -1756,6 +1950,9 @@
           const card = document.createElement('div');
           card.className = `roadmap-card status-${item.status || 'planned'}`;
           card.dataset.itemId = item.id;
+          card.dataset.quarterKey = qKey;
+          card.setAttribute('draggable', 'true');
+          card.title = 'Drag inisiatif ini ke kuartal lain untuk memindahkan';
 
           const durationText = calculateDaysDuration(item.startDate, item.finishDate);
           const statusLabels = {
@@ -1798,6 +1995,22 @@
             ` : ''}
           `;
 
+          // Roadmap Card Drag and Drop
+          card.addEventListener('dragstart', (e) => {
+            card.classList.add('is-dragging');
+            const payload = JSON.stringify({
+              roadmapItemId: item.id,
+              sourceQuarterKey: qKey
+            });
+            e.dataTransfer.setData('text/plain', payload);
+            e.dataTransfer.effectAllowed = 'move';
+          });
+
+          card.addEventListener('dragend', () => {
+            card.classList.remove('is-dragging');
+            document.querySelectorAll('.quarter-column').forEach(col => col.classList.remove('is-drag-target'));
+          });
+
           card.querySelector('.btn-edit-rm').addEventListener('click', (e) => {
             e.stopPropagation();
             openRoadmapItemModal(qKey, item.id);
@@ -1822,8 +2035,46 @@
         openQuarterMetaModal(qKey);
       });
 
+      const badge = colEl.querySelector('.quarter-months-badge');
+      if (badge) {
+        badge.addEventListener('click', () => openQuarterMetaModal(qKey));
+      }
+
       DOM.quartersGrid.appendChild(colEl);
     });
+  }
+
+  function moveRoadmapItem(sourceQKey, targetQKey, itemId) {
+    if (!state.data.roadmap || !state.data.roadmap[sourceQKey]) return;
+    if (sourceQKey === targetQKey) return;
+
+    const sourceItems = state.data.roadmap[sourceQKey].items || [];
+    const itemIdx = sourceItems.findIndex(it => it.id === itemId);
+    if (itemIdx === -1) return;
+
+    const [item] = sourceItems.splice(itemIdx, 1);
+
+    if (!state.data.roadmap[targetQKey]) {
+      const meta = QUARTERS_META[targetQKey];
+      state.data.roadmap[targetQKey] = {
+        targetRupiah: meta.defaultTarget,
+        strategy: '',
+        startDate: meta.defaultStart,
+        endDate: meta.defaultEnd,
+        periodLabel: '',
+        items: []
+      };
+    }
+    if (!state.data.roadmap[targetQKey].items) {
+      state.data.roadmap[targetQKey].items = [];
+    }
+
+    state.data.roadmap[targetQKey].items.push(item);
+
+    saveData();
+    renderRoadmapBoard();
+    renderHeaderStats();
+    showToast(`Inisiatif "${item.title}" dipindahkan ke ${targetQKey} 🚀`);
   }
 
   function openRoadmapItemModal(quarterKey = 'Q1', itemId = null) {
@@ -1934,10 +2185,21 @@
     const qData = state.data.roadmap[qKey] || { targetRupiah: meta.defaultTarget, strategy: '', items: [] };
 
     DOM.quarterMetaKey.value = qKey;
-    DOM.quarterMetaModalTitle.textContent = `Target & Strategi ${meta.label}`;
+    DOM.quarterMetaModalTitle.textContent = `Target & Periode ${meta.label}`;
     DOM.quarterMetaTargetRupiah.value = qData.targetRupiah || 0;
     DOM.quarterRupiahPreview.textContent = formatRupiah(qData.targetRupiah || 0);
     DOM.quarterMetaStrategy.value = qData.strategy || '';
+
+    // Dynamic Quarter Dates
+    if (DOM.quarterMetaStartDate) {
+      DOM.quarterMetaStartDate.value = qData.startDate || meta.defaultStart || '';
+    }
+    if (DOM.quarterMetaEndDate) {
+      DOM.quarterMetaEndDate.value = qData.endDate || meta.defaultEnd || '';
+    }
+    if (DOM.quarterMetaPeriodLabel) {
+      DOM.quarterMetaPeriodLabel.value = qData.periodLabel || '';
+    }
 
     DOM.quarterMetaModalOverlay.classList.add('is-active');
     setTimeout(() => DOM.quarterMetaTargetRupiah.focus(), 50);
@@ -1953,16 +2215,34 @@
     e.preventDefault();
     const qKey = DOM.quarterMetaKey.value;
     if (!state.data.roadmap[qKey]) {
-      state.data.roadmap[qKey] = { targetRupiah: 0, strategy: '', items: [] };
+      const meta = QUARTERS_META[qKey];
+      state.data.roadmap[qKey] = {
+        targetRupiah: meta.defaultTarget,
+        strategy: '',
+        startDate: meta.defaultStart,
+        endDate: meta.defaultEnd,
+        periodLabel: '',
+        items: []
+      };
     }
 
     state.data.roadmap[qKey].targetRupiah = parseFloat(DOM.quarterMetaTargetRupiah.value) || 0;
     state.data.roadmap[qKey].strategy = DOM.quarterMetaStrategy.value.trim();
 
+    if (DOM.quarterMetaStartDate) {
+      state.data.roadmap[qKey].startDate = DOM.quarterMetaStartDate.value;
+    }
+    if (DOM.quarterMetaEndDate) {
+      state.data.roadmap[qKey].endDate = DOM.quarterMetaEndDate.value;
+    }
+    if (DOM.quarterMetaPeriodLabel) {
+      state.data.roadmap[qKey].periodLabel = DOM.quarterMetaPeriodLabel.value.trim();
+    }
+
     saveData();
     closeQuarterMetaModal();
     renderAll();
-    showToast(`Target & strategi ${qKey} berhasil disimpan!`);
+    showToast(`Target & tanggal ${qKey} berhasil disimpan!`);
   }
 
   // ==========================================================================
@@ -3360,6 +3640,15 @@
     if (DOM.cancelTaskModalBtn) DOM.cancelTaskModalBtn.addEventListener('click', closeTaskModal);
     if (DOM.taskForm) DOM.taskForm.addEventListener('submit', handleTaskFormSubmit);
     if (DOM.clearCompletedBtn) DOM.clearCompletedBtn.addEventListener('click', clearCompletedTasks);
+    if (DOM.addTaskItemBtn) DOM.addTaskItemBtn.addEventListener('click', handleAddModalTaskItem);
+    if (DOM.newTaskItemInput) {
+      DOM.newTaskItemInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleAddModalTaskItem();
+        }
+      });
+    }
 
     // Plan Actions
     if (DOM.addNewPlanBtn) DOM.addNewPlanBtn.addEventListener('click', openNewPlanModal);

@@ -996,6 +996,252 @@ button {
 }
 
 /* ==========================================================================
+   SUB-ITEMS / CHECKLIST IN TASK CARDS & MODAL (1 TASK : N ITEMS)
+   ========================================================================== */
+
+/* Sub-items in Task Card */
+.task-subitems-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+  padding-top: 5px;
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.task-subitems-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.task-subitems-badge.all-done {
+  color: var(--priority-low);
+}
+
+.task-subitems-track {
+  flex: 1;
+  max-width: 65px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.task-subitems-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 99px;
+  transition: width 0.25s ease;
+}
+
+.task-subitems-fill.all-done {
+  background: var(--priority-low);
+}
+
+.task-subitems-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.task-subitem-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.73rem;
+  color: var(--text-muted);
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+  user-select: none;
+}
+
+.task-subitem-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.subitem-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  border: 1.5px solid var(--border-medium);
+  border-radius: 3px;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.subitem-checkbox:hover {
+  border-color: var(--primary);
+}
+
+.subitem-checkbox:checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.subitem-checkbox:checked::after {
+  content: "";
+  width: 3px;
+  height: 6px;
+  border: solid #ffffff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg) translate(-0.5px, -0.5px);
+  display: block;
+}
+
+.task-subitem-item.is-done .subitem-text {
+  text-decoration: line-through;
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+.subitem-text {
+  flex: 1;
+  word-break: break-word;
+  line-height: 1.25;
+}
+
+/* Sub-items in Task Modal */
+.task-items-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  margin-top: 2px;
+}
+
+.task-items-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.task-items-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.task-items-count-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: var(--bg-subtle);
+  color: var(--primary);
+  padding: 2px 7px;
+  border-radius: 99px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.task-item-input-group {
+  display: flex;
+  gap: 6px;
+}
+
+.task-item-input-group .input-text {
+  flex: 1;
+  font-size: 0.8rem;
+  padding: 6px 10px;
+}
+
+.btn-add-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--primary);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-add-item:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+.task-items-list-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 150px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.task-modal-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 5px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  font-size: 0.78rem;
+  transition: all 0.15s ease;
+}
+
+.task-modal-item-row:hover {
+  border-color: var(--border-medium);
+}
+
+.task-modal-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.task-modal-item-text {
+  color: var(--text-main);
+  flex: 1;
+  word-break: break-word;
+}
+
+.task-modal-item-text.is-done {
+  text-decoration: line-through;
+  color: var(--text-dim);
+}
+
+.btn-del-item {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  transition: all 0.15s ease;
+}
+
+.btn-del-item:hover {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ==========================================================================
    4. RIGHT SIDEBAR: MULTI-PLAN TABS
    ========================================================================== */
 
@@ -1457,6 +1703,35 @@ button {
   position: relative;
   transition: all 0.15s ease;
   border-left: 4px solid var(--primary);
+  cursor: grab;
+  user-select: none;
+}
+
+.roadmap-card:active {
+  cursor: grabbing;
+}
+
+.roadmap-card.is-dragging {
+  opacity: 0.35;
+  transform: scale(0.97);
+  border: 1.5px dashed var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.quarter-column.is-drag-target {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 2px var(--primary), var(--shadow-card);
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, var(--bg-panel) 140px) !important;
+}
+
+.quarter-months-badge.is-clickable {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.quarter-months-badge.is-clickable:hover {
+  background: var(--primary);
+  color: #fff;
 }
 
 .roadmap-card:hover {

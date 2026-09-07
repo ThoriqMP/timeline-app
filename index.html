@@ -485,6 +485,26 @@
           </div>
         </div>
 
+        <!-- Sub-items / Checklist (1 Task : N Items) -->
+        <div class="task-items-section">
+          <div class="task-items-section-header">
+            <label class="task-items-title">
+              <i class="fa-solid fa-list-check"></i> Item Pekerjaan / Subtask (1 Task : N Item)
+            </label>
+            <span class="task-items-count-badge" id="taskItemsCountBadge">0 item</span>
+          </div>
+          <div class="task-item-input-group">
+            <input type="text" id="newTaskItemInput" class="input-text" placeholder="Tulis item pekerjaan (tekan Enter untuk menambah)..." />
+            <button type="button" class="btn-subtle btn-add-item" id="addTaskItemBtn">
+              <i class="fa-solid fa-plus"></i>
+              <span>Tambah</span>
+            </button>
+          </div>
+          <div class="task-items-list-box" id="taskModalItemsList">
+            <!-- Dynamic task items in modal -->
+          </div>
+        </div>
+
         <div class="modal-box-footer">
           <button type="button" class="btn-cancel" id="cancelTaskModalBtn">Batal</button>
           <button type="submit" class="btn-primary" id="saveTaskBtn">Simpan Tugas</button>
@@ -729,6 +749,23 @@
 
       <form id="quarterMetaForm" class="modal-box-body">
         <input type="hidden" id="quarterMetaKey" />
+
+        <div class="input-row-2">
+          <div class="input-field">
+            <label for="quarterMetaStartDate">Tanggal Mulai Kuartal</label>
+            <input type="date" id="quarterMetaStartDate" class="input-text font-mono" />
+          </div>
+          <div class="input-field">
+            <label for="quarterMetaEndDate">Tanggal Selesai Kuartal</label>
+            <input type="date" id="quarterMetaEndDate" class="input-text font-mono" />
+          </div>
+        </div>
+
+        <div class="input-field">
+          <label for="quarterMetaPeriodLabel">Label Periode Dinamis</label>
+          <input type="text" id="quarterMetaPeriodLabel" class="input-text" placeholder="Contoh: Januari - Maret 2026 atau Q1 Jan-Mar" />
+          <small style="font-size: 0.72rem; color: var(--text-dim); margin-top: 3px; display: block;">Jika dikosongkan, label otomatis memakai rentang tanggal di atas.</small>
+        </div>
 
         <div class="input-field">
           <label for="quarterMetaTargetRupiah">Target Goals Kuartal (Rupiah)</label>
