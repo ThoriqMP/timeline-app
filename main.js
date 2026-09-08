@@ -661,6 +661,14 @@ ipcMain.on('install-update', () => {
 });
 
 app.whenReady().then(() => {
+  if (process.platform === 'darwin' && app.dock) {
+    try {
+      app.dock.setIcon(path.join(__dirname, 'build', 'icon.png'));
+    } catch (e) {
+      // fallback
+    }
+  }
+
   createWindow();
   setupAutoUpdater();
 
