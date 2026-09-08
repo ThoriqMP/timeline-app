@@ -810,6 +810,7 @@
       updateCurrentVersionText: document.getElementById('updateCurrentVersionText'),
       updateNewVersionText: document.getElementById('updateNewVersionText'),
       updateReleaseNotesList: document.getElementById('updateReleaseNotesList'),
+      updateNotesCountBadge: document.getElementById('updateNotesCountBadge'),
       btnCancelUpdateAvailable: document.getElementById('btnCancelUpdateAvailable'),
       btnStartUpdateDownload: document.getElementById('btnStartUpdateDownload'),
       updateProgressBarFill: document.getElementById('updateProgressBarFill'),
@@ -4630,7 +4631,7 @@
     if (DOM.userProfileModalOverlay) DOM.userProfileModalOverlay.classList.remove('is-active');
     if (DOM.updateModalOverlay) DOM.updateModalOverlay.classList.remove('is-active');
 
-    const curVer = updateState.currentVersion || '1.5.0';
+    const curVer = updateState.currentVersion || '1.5.1';
     if (DOM.appInfoVersionBadge) DOM.appInfoVersionBadge.textContent = `v${curVer}`;
     if (DOM.appInfoVerText) DOM.appInfoVerText.textContent = `${curVer} (Official)`;
 
@@ -4658,7 +4659,7 @@
   }
 
   const updateState = {
-    currentVersion: '1.5.0',
+    currentVersion: '1.5.1',
     availableUpdateInfo: null,
     isDownloading: false
   };
@@ -4838,19 +4839,19 @@
         throw new Error(`Server rilis GitHub merespon dengan status ${response.status}`);
       }
       const data = await response.json();
-      const latestTag = (data.tag_name || data.name || '1.5.0').replace(/^v/, '').trim();
-      const currentVer = String(updateState.currentVersion || '1.5.0').replace(/^v/, '').trim();
+      const latestTag = (data.tag_name || data.name || '1.5.1').replace(/^v/, '').trim();
+      const currentVer = String(updateState.currentVersion || '1.5.1').replace(/^v/, '').trim();
 
       const defaultNotes = `
-### Fitur Baru & Peningkatan Versi ${latestTag}:
-- 🖼️ **Logo Baru Timeline**: Pembaruan identitas visual dengan logo resmi Timeline beresolusi tinggi.
-- 👁️ **Preview Cetak PDF Interaktif**: Tinjau dokumen (Jadwal Mingguan, Roadmap Tahunan, & Itinerary Perjalanan) sebelum mencetak/ekspor dengan kontrol zoom interaktif.
-- 🚀 **Double-Layer Navigation**: Tampilan navigasi dua tingkat yang rapi, modern, dan ergonomis.
-- 🎨 **Icon Vector Overhaul**: Seluruh ikon diperbarui ke font vector Font Awesome profesional tanpa gradasi yang mengganggu.
-- 📋 **Drag-and-Drop & Duplicate Support**: Fleksibilitas memindahkan atau menduplikat target harian dan roadmap.
-- 🖨️ **Executive PDF Reporting**: Pencetakan dokumen kalender dan aktivitas berkualitas tinggi berformat planner.
-- ⚡ **Resilient Chunked Downloader**: Pengunduhan paket rilis (~240MB) dengan streaming chunk data yang stabil dan tahan gangguan jaringan.
-- 🛡️ **Anti-Looping Release Verification**: Verifikasi kesiapan berkas rilis di server sebelum pengunduhan dibuka.
+### Pembaruan & Peningkatan Versi ${latestTag}:
+- [PERBAIKAN] Tata Letak & Desain Patch Notes: Tampilan modal informasi update disajikan dalam kartu fitur terstruktur dengan badge kategori jelas dan icon vector profesional tanpa emoji berantakan.
+- [BARU] Preview Cetak Dokumen PDF Interaktif: Tinjau langsung lembar kerja A4 (Jadwal Mingguan, Roadmap Tahunan, & Rencana Perjalanan) dengan kontrol zoom presisi sebelum mencetak atau menyimpan ke PDF.
+- [PENINGKATAN] Integrasi Logo Resmi Timeline: Penerapan logo resolusi tinggi baru pada header aplikasi, kop dokumen laporan cetak, dan berkas ikon desktop.
+- [PENINGKATAN] Navigasi Double-Layer: Struktur bilah menu dua tingkat yang rapi dan ergonomis untuk alur kerja lebih cepat.
+- [PENINGKATAN] Standardisasi Vector Icons: Seluruh ikon antarmuka menggunakan vector icons Font Awesome profesional dengan warna solid tanpa gradasi mengganggu.
+- [PENINGKATAN] Drag-and-Drop & Duplikasi: Fleksibilitas memindahkan atau menyalin tugas harian dan roadmap secara interaktif.
+- [PENINGKATAN] Executive PDF Planner: Format cetak dokumen standar planner eksekutif dilengkapi ringkasan KPI dan quote banner.
+- [PERBAIKAN] Downloader Streaming Chunks: Pengunduhan paket rilis (~240MB) dengan streaming chunks data yang stabil dan verifikasi integritas paket di server.
       `.trim();
 
       const notes = (data.body && data.body.trim()) ? data.body.trim() : defaultNotes;
@@ -4962,7 +4963,7 @@
         DOM.btnStartUpdateDownload.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> <span>Unduh & Pasang Sekarang</span>';
       }
 
-      const newVer = data.version || (updateState.availableUpdateInfo && updateState.availableUpdateInfo.version) || '1.5.0';
+      const newVer = data.version || (updateState.availableUpdateInfo && updateState.availableUpdateInfo.version) || '1.5.1';
       if (DOM.updateCurrentVersionText) DOM.updateCurrentVersionText.textContent = `v${updateState.currentVersion}`;
       if (DOM.updateNewVersionText) DOM.updateNewVersionText.textContent = `v${newVer}`;
 
@@ -5026,11 +5027,15 @@
 
     if (!notes || (typeof notes === 'string' && !notes.trim())) {
       notes = `
-- Double-Layer Navigation: Tampilan navigasi dua tingkat yang rapi, modern, dan ergonomis.
-- Icon Vector Overhaul: Seluruh emoji diganti dengan vector icons Font Awesome profesional.
-- Drag-and-Drop & Duplikat: Opsi memindahkan atau menyalin tugas harian dan inisiatif roadmap tahunan.
-- Executive PDF Reporting: Ekspor dokumen kalender dan aktivitas berkualitas tinggi.
-- Peningkatan Stabilitas: Optimasi kinerja dan responsivitas aplikasi.
+### Pembaruan & Peningkatan Versi 1.5.1:
+- [PERBAIKAN] Tata Letak & Desain Patch Notes: Tampilan modal informasi update disajikan dalam kartu fitur terstruktur dengan badge kategori jelas dan icon vector profesional tanpa emoji berantakan.
+- [BARU] Preview Cetak Dokumen PDF Interaktif: Pratinjau langsung lembar kerja A4 (Jadwal Mingguan, Roadmap Tahunan, & Rencana Perjalanan) dengan kontrol zoom presisi sebelum mencetak atau menyimpan ke PDF.
+- [PENINGKATAN] Integrasi Logo Resmi Timeline: Penerapan logo resolusi tinggi baru pada header aplikasi, kop dokumen laporan cetak, dan berkas ikon desktop.
+- [PENINGKATAN] Navigasi Double-Layer: Struktur bilah menu dua tingkat yang rapi dan ergonomis untuk alur kerja lebih cepat.
+- [PENINGKATAN] Standardisasi Vector Icons: Seluruh ikon antarmuka menggunakan vector icons Font Awesome profesional dengan warna solid tanpa gradasi mengganggu.
+- [PENINGKATAN] Drag-and-Drop & Duplikasi: Fleksibilitas memindahkan atau menyalin tugas harian dan roadmap secara interaktif.
+- [PENINGKATAN] Executive PDF Planner: Format cetak dokumen standar planner eksekutif dilengkapi ringkasan KPI dan quote banner.
+- [PERBAIKAN] Downloader Streaming Chunks: Pengunduhan paket rilis (~240MB) dengan streaming chunks data yang stabil dan verifikasi integritas paket di server.
       `.trim();
     }
 
@@ -5047,29 +5052,137 @@
       lines = [String(notes)];
     }
 
+    let featureCount = 0;
+
     lines.forEach(line => {
-      const trimmed = String(line || '').trim();
+      let trimmed = String(line || '').trim();
       if (!trimmed) return;
 
-      if (trimmed.startsWith('###') || trimmed.startsWith('##') || trimmed.startsWith('#')) {
-        const h = document.createElement('div');
-        h.style.fontWeight = '700';
-        h.style.color = 'var(--text-main)';
-        h.style.margin = '8px 0 4px';
-        h.textContent = trimmed.replace(/^#+\s*/, '');
-        DOM.updateReleaseNotesList.appendChild(h);
-      } else {
-        const itemEl = document.createElement('div');
-        itemEl.className = 'update-feature-item';
+      // Filter out auto-generated release comments, hashes, or PR links
+      if (trimmed.startsWith('<!--') || trimmed.endsWith('-->')) return;
 
-        const cleanText = trimmed.replace(/^[-*•]\s*/, '');
-        itemEl.innerHTML = `
-          <i class="fa-solid fa-circle-check"></i>
-          <span>${cleanText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</span>
-        `;
-        DOM.updateReleaseNotesList.appendChild(itemEl);
+      // Handle Markdown section headers
+      if (trimmed.startsWith('###') || trimmed.startsWith('##') || trimmed.startsWith('#')) {
+        const headerText = trimmed.replace(/^#+\s*/, '').replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA00}-\u{1FAFF}\u{FE00}-\u{FE0F}]/gu, '').trim();
+        const headerEl = document.createElement('div');
+        headerEl.className = 'patch-section-title';
+        headerEl.innerHTML = `<i class="fa-solid fa-circle-nodes"></i> <span>${headerText}</span>`;
+        DOM.updateReleaseNotesList.appendChild(headerEl);
+        return;
       }
+
+      // Clean leading bullet marks and unicode emojis to ensure clean vector aesthetic
+      trimmed = trimmed
+        .replace(/^[-*•]\s*/, '')
+        .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA00}-\u{1FAFF}\u{FE00}-\u{FE0F}]/gu, '')
+        .replace(/\s*by\s+@[\w-]+\s+in\s+https?:\/\/\S+/gi, '')
+        .trim();
+
+      if (!trimmed) return;
+
+      // Determine category type and badge
+      let typeClass = 'patch-type-improve';
+      let categoryLabel = 'PENINGKATAN';
+      let defaultIcon = 'fa-solid fa-arrow-trend-up';
+
+      const lower = trimmed.toLowerCase();
+      if (/\[baru\]|\[new\]|\[fitur\]|\bfeat\b|\bbaru\b|\bmenambahkan\b/i.test(lower)) {
+        typeClass = 'patch-type-new';
+        categoryLabel = 'FITUR BARU';
+        defaultIcon = 'fa-solid fa-sparkles';
+      } else if (/\[perbaikan\]|\[fix\]|\[bug\]|\bfix\b|\bperbaikan\b|\bmemperbaiki\b|\bbug\b/i.test(lower)) {
+        typeClass = 'patch-type-fix';
+        categoryLabel = 'PERBAIKAN';
+        defaultIcon = 'fa-solid fa-wrench';
+      } else if (/\[peningkatan\]|\[improve\]|\[perf\]|\boptimasi\b|\bpeningkatan\b|\bperbarui\b|\boverhaul\b/i.test(lower)) {
+        typeClass = 'patch-type-improve';
+        categoryLabel = 'PENINGKATAN';
+        defaultIcon = 'fa-solid fa-arrow-trend-up';
+      } else {
+        typeClass = 'patch-type-general';
+        categoryLabel = 'PEMBARUAN';
+        defaultIcon = 'fa-solid fa-circle-check';
+      }
+
+      // Context-aware Vector Icons
+      let iconClass = defaultIcon;
+      if (lower.includes('pdf') || lower.includes('cetak') || lower.includes('print')) {
+        iconClass = 'fa-solid fa-file-pdf';
+      } else if (lower.includes('patch note') || lower.includes('desain') || lower.includes('tampilan') || lower.includes('kartu')) {
+        iconClass = 'fa-solid fa-table-list';
+      } else if (lower.includes('logo') || lower.includes('branding') || lower.includes('gambar')) {
+        iconClass = 'fa-solid fa-image';
+      } else if (lower.includes('icon') || lower.includes('ikon') || lower.includes('vector')) {
+        iconClass = 'fa-solid fa-icons';
+      } else if (lower.includes('navigasi') || lower.includes('navigation') || lower.includes('menu')) {
+        iconClass = 'fa-solid fa-compass';
+      } else if (lower.includes('drag') || lower.includes('drop') || lower.includes('duplikat') || lower.includes('salin')) {
+        iconClass = 'fa-solid fa-arrows-up-down-left-right';
+      } else if (lower.includes('download') || lower.includes('unduh') || lower.includes('chunk') || lower.includes('stream')) {
+        iconClass = 'fa-solid fa-cloud-arrow-down';
+      } else if (lower.includes('verifikasi') || lower.includes('anti-loop') || lower.includes('stabilitas') || lower.includes('keamanan')) {
+        iconClass = 'fa-solid fa-shield-check';
+      } else if (lower.includes('roadmap') || lower.includes('quartal') || lower.includes('target')) {
+        iconClass = 'fa-solid fa-timeline';
+      } else if (lower.includes('jadwal') || lower.includes('kalender') || lower.includes('harian')) {
+        iconClass = 'fa-solid fa-calendar-week';
+      } else if (lower.includes('itinerary') || lower.includes('perjalanan') || lower.includes('trip')) {
+        iconClass = 'fa-solid fa-plane-departure';
+      }
+
+      // Strip category tag prefixes from display text
+      let cleanedText = trimmed
+        .replace(/^\[(BARU|NEW|FITUR|PENINGKATAN|IMPROVE|PERBAIKAN|FIX|BUG|PEMBARUAN)\]\s*/i, '')
+        .trim();
+
+      // Separate title and description
+      let title = '';
+      let desc = '';
+
+      if (cleanedText.includes(':')) {
+        const parts = cleanedText.split(':');
+        title = parts[0].trim();
+        desc = parts.slice(1).join(':').trim();
+      } else if (cleanedText.includes(' - ')) {
+        const parts = cleanedText.split(' - ');
+        title = parts[0].trim();
+        desc = parts.slice(1).join(' - ').trim();
+      } else {
+        const boldMatch = cleanedText.match(/^\*\*(.*?)\*\*\s*(.*)$/);
+        if (boldMatch) {
+          title = boldMatch[1].trim();
+          desc = boldMatch[2].trim();
+        } else {
+          title = cleanedText;
+          desc = '';
+        }
+      }
+
+      title = title.replace(/\*\*/g, '').trim();
+      desc = desc.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').trim();
+
+      featureCount++;
+
+      const card = document.createElement('div');
+      card.className = 'patch-note-card';
+      card.innerHTML = `
+        <div class="patch-icon-box ${typeClass}">
+          <i class="${iconClass}"></i>
+        </div>
+        <div class="patch-details">
+          <div class="patch-header-row">
+            <span class="patch-category-badge ${typeClass}">${categoryLabel}</span>
+            <h5 class="patch-title">${title}</h5>
+          </div>
+          ${desc ? `<p class="patch-desc">${desc}</p>` : ''}
+        </div>
+      `;
+      DOM.updateReleaseNotesList.appendChild(card);
     });
+
+    if (DOM.updateNotesCountBadge) {
+      DOM.updateNotesCountBadge.textContent = `${featureCount} Pembaruan`;
+    }
   }
 
   function formatDateToISO(date) {
