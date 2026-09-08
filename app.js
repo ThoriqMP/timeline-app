@@ -871,12 +871,12 @@
 
   function getCategoryLabel(cat) {
     const map = {
-      work: '💼 Work',
-      study: '📚 Study',
-      health: '🏃 Health',
-      meeting: '🤝 Meeting',
-      personal: '🌟 Personal',
-      break: '☕ Break'
+      work: 'Work',
+      study: 'Study',
+      health: 'Health',
+      meeting: 'Meeting',
+      personal: 'Personal',
+      break: 'Break'
     };
     return map[cat] || cat;
   }
@@ -946,7 +946,7 @@
       if (startMins < existEnd && endMins > existStart) {
         return {
           valid: false,
-          message: `⚠️ Jam tersebut sudah dipakai untuk tugas "${task.title}" (${task.startTime} - ${task.endTime})!`
+          message: `Jam tersebut sudah dipakai untuk tugas "${task.title}" (${task.startTime} - ${task.endTime})!`
         };
       }
 
@@ -954,7 +954,7 @@
         const requiredStart = minutesToTime(existEnd + 5);
         return {
           valid: false,
-          message: `☕ Wajib jeda istirahat 5 menit setelah "${task.title}" (${task.startTime} - ${task.endTime}). Tugas baru dapat dimulai pukul ${requiredStart}!`
+          message: `Wajib jeda istirahat 5 menit setelah "${task.title}" (${task.startTime} - ${task.endTime}). Tugas baru dapat dimulai pukul ${requiredStart}!`
         };
       }
 
@@ -962,7 +962,7 @@
         const requiredEnd = minutesToTime(existStart - 5);
         return {
           valid: false,
-          message: `☕ Wajib jeda istirahat 5 menit sebelum "${task.title}" (${task.startTime} - ${task.endTime}). Tugas harus selesai paling lambat pukul ${requiredEnd}!`
+          message: `Wajib jeda istirahat 5 menit sebelum "${task.title}" (${task.startTime} - ${task.endTime}). Tugas harus selesai paling lambat pukul ${requiredEnd}!`
         };
       }
     }
@@ -1027,7 +1027,7 @@
   function showConfirmDialog({
     title = 'Konfirmasi',
     message = 'Apakah Anda yakin ingin melanjutkan?',
-    icon = '🗑️',
+    icon = 'fa-solid fa-triangle-exclamation',
     confirmText = 'Ya, Hapus',
     isDanger = true,
     onConfirm
@@ -1036,7 +1036,15 @@
 
     if (DOM.confirmModalTitle) DOM.confirmModalTitle.textContent = title;
     if (DOM.confirmModalMessage) DOM.confirmModalMessage.textContent = message;
-    if (DOM.confirmModalIcon) DOM.confirmModalIcon.textContent = icon;
+    if (DOM.confirmModalIcon) {
+      if (typeof icon === 'string' && icon.startsWith('fa-')) {
+        DOM.confirmModalIcon.innerHTML = `<i class="${icon}"></i>`;
+      } else if (typeof icon === 'string' && icon.includes('<i ')) {
+        DOM.confirmModalIcon.innerHTML = icon;
+      } else {
+        DOM.confirmModalIcon.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i>`;
+      }
+    }
     if (DOM.okConfirmBtn) {
       DOM.okConfirmBtn.textContent = confirmText;
       DOM.okConfirmBtn.className = isDanger ? 'btn-danger' : 'btn-primary';
@@ -1062,13 +1070,38 @@
     const task = (activePlan.days[sourceDayKey] || []).find(t => t.id === taskId);
     if (!task) return;
 
-    state.pendingDragAction = { sourceDayKey, targetDayKey, taskId, task };
+    state.pendingDragAction = { type: 'task', sourceDayKey, targetDayKey, taskId, task };
 
     if (DOM.dragTaskHighlight) {
       DOM.dragTaskHighlight.textContent = `${task.startTime}-${task.endTime} : ${task.title}`;
     }
     if (DOM.dragTargetDayName) {
       DOM.dragTargetDayName.textContent = `Hari ${getDayLabel(targetDayKey)}`;
+    }
+
+    if (DOM.dragActionModalOverlay) {
+      DOM.dragActionModalOverlay.classList.add('is-active');
+    }
+  }
+
+  function openRoadmapDragActionModal(sourceQuarterKey, targetQuarterKey, roadmapItemId) {
+    if (!state.data.roadmap || !state.data.roadmap[sourceQuarterKey]) return;
+    const item = (state.data.roadmap[sourceQuarterKey].items || []).find(i => i.id === roadmapItemId);
+    if (!item) return;
+
+    state.pendingDragAction = {
+      type: 'roadmap',
+      sourceQuarterKey,
+      targetQuarterKey,
+      roadmapItemId,
+      item
+    };
+
+    if (DOM.dragTaskHighlight) {
+      DOM.dragTaskHighlight.textContent = `Inisiatif: ${item.title}`;
+    }
+    if (DOM.dragTargetDayName) {
+      DOM.dragTargetDayName.textContent = `Kuartal ${targetQuarterKey}`;
     }
 
     if (DOM.dragActionModalOverlay) {
@@ -1085,6 +1118,14 @@
 
   function executeDragMove() {
     if (!state.pendingDragAction) return;
+
+    if (state.pendingDragAction.type === 'roadmap') {
+      const { sourceQuarterKey, targetQuarterKey, roadmapItemId } = state.pendingDragAction;
+      moveRoadmapItem(sourceQuarterKey, targetQuarterKey, roadmapItemId);
+      closeDragActionModal();
+      return;
+    }
+
     const { sourceDayKey, targetDayKey, taskId, task } = state.pendingDragAction;
     const activePlan = getActivePlan();
 
@@ -1116,11 +1157,19 @@
     saveData();
     renderAll();
     closeDragActionModal();
-    showToast(`📦 Tugas dipindahkan ke ${getDayLabel(targetDayKey)} (${finalStartTime} - ${finalEndTime})`);
+    showToast(`Tugas dipindahkan ke ${getDayLabel(targetDayKey)} (${finalStartTime} - ${finalEndTime})`);
   }
 
   function executeDragDuplicate() {
     if (!state.pendingDragAction) return;
+
+    if (state.pendingDragAction.type === 'roadmap') {
+      const { sourceQuarterKey, targetQuarterKey, roadmapItemId } = state.pendingDragAction;
+      duplicateRoadmapItem(sourceQuarterKey, roadmapItemId, targetQuarterKey);
+      closeDragActionModal();
+      return;
+    }
+
     const { targetDayKey, task } = state.pendingDragAction;
     const activePlan = getActivePlan();
 
@@ -1141,7 +1190,8 @@
       id: generateId('task'),
       startTime: finalStartTime,
       endTime: finalEndTime,
-      completed: false
+      completed: false,
+      items: task.items ? task.items.map(it => ({ ...it, id: generateId('item'), completed: false })) : []
     };
 
     activePlan.days[targetDayKey].push(clonedTask);
@@ -1149,7 +1199,68 @@
     saveData();
     renderAll();
     closeDragActionModal();
-    showToast(`📋 Tugas diduplikat ke ${getDayLabel(targetDayKey)} (${finalStartTime} - ${finalEndTime})`);
+    showToast(`Tugas diduplikat ke ${getDayLabel(targetDayKey)} (${finalStartTime} - ${finalEndTime})`);
+  }
+
+  function duplicateTask(dayKey, taskId) {
+    const activePlan = getActivePlan();
+    const tasks = activePlan.days[dayKey] || [];
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+
+    const suggested = getSuggestedNextTimeSlot(dayKey);
+    const clonedTask = {
+      ...task,
+      id: generateId('task'),
+      title: `${task.title} (Copy)`,
+      startTime: suggested.startTime,
+      endTime: suggested.endTime,
+      completed: false,
+      items: task.items ? task.items.map(it => ({ ...it, id: generateId('item'), completed: false })) : []
+    };
+
+    tasks.push(clonedTask);
+    saveData();
+    renderTimelineGrid();
+    renderHeaderStats();
+    showToast(`Tugas "${task.title}" diduplikat (${suggested.startTime} - ${suggested.endTime})`);
+  }
+
+  function duplicateRoadmapItem(sourceQKey, itemId, targetQKey = null) {
+    if (!state.data.roadmap || !state.data.roadmap[sourceQKey]) return;
+    const sourceItems = state.data.roadmap[sourceQKey].items || [];
+    const item = sourceItems.find(it => it.id === itemId);
+    if (!item) return;
+
+    const destQKey = targetQKey || sourceQKey;
+    if (!state.data.roadmap[destQKey]) {
+      const meta = QUARTERS_META[destQKey];
+      state.data.roadmap[destQKey] = {
+        targetRupiah: meta.defaultTarget,
+        strategy: '',
+        startDate: meta.defaultStart,
+        endDate: meta.defaultEnd,
+        periodLabel: '',
+        items: []
+      };
+    }
+    if (!state.data.roadmap[destQKey].items) {
+      state.data.roadmap[destQKey].items = [];
+    }
+
+    const clonedItem = {
+      ...item,
+      id: generateId('rm'),
+      title: destQKey === sourceQKey ? `${item.title} (Copy)` : item.title,
+      progress: 0,
+      status: 'planned'
+    };
+
+    state.data.roadmap[destQKey].items.push(clonedItem);
+    saveData();
+    renderRoadmapBoard();
+    renderHeaderStats();
+    showToast(`Inisiatif "${clonedItem.title}" diduplikat ke ${destQKey}`);
   }
 
   // ==========================================================================
@@ -1305,7 +1416,7 @@
               const breakEl = document.createElement('div');
               breakEl.className = 'break-indicator';
               breakEl.innerHTML = `
-                <span>☕ Istirahat ${breakGap} mnt</span>
+                <span><i class="fa-solid fa-mug-hot"></i> Istirahat ${breakGap} mnt</span>
                 <span class="break-time-range">(${prevTask.endTime} - ${task.startTime})</span>
               `;
               colBody.appendChild(breakEl);
@@ -1351,6 +1462,7 @@
             <div class="task-card-top">
               <span class="task-time-pill">${escapeHtml(task.startTime)} - ${escapeHtml(task.endTime)}</span>
               <div class="task-hover-tools">
+                <button class="tool-btn btn-dup-t" title="Duplikat Tugas"><i class="fa-regular fa-clone"></i></button>
                 <button class="tool-btn btn-edit-t" title="Edit"><i class="fa-solid fa-pen-to-square"></i></button>
                 <button class="tool-btn btn-del-t" title="Hapus"><i class="fa-solid fa-trash-can"></i></button>
               </div>
@@ -1392,6 +1504,11 @@
           const chk = card.querySelector('.custom-checkbox');
           chk.addEventListener('change', (e) => {
             toggleTaskCompleted(day.key, task.id, e.target.checked);
+          });
+
+          card.querySelector('.btn-dup-t').addEventListener('click', (e) => {
+            e.stopPropagation();
+            duplicateTask(day.key, task.id);
           });
 
           card.querySelector('.btn-edit-t').addEventListener('click', (e) => {
@@ -1576,7 +1693,7 @@
     showConfirmDialog({
       title: 'Hapus Tugas?',
       message: `Apakah Anda yakin ingin menghapus "${escapeHtml(taskTitle)}"?`,
-      icon: '🗑️',
+      icon: 'fa-solid fa-trash-can',
       confirmText: 'Ya, Hapus',
       isDanger: true,
       onConfirm: () => {
@@ -1621,7 +1738,7 @@
     const allDone = task.items.length > 0 && task.items.every(it => it.completed);
     if (allDone && !task.completed) {
       task.completed = true;
-      showToast(`Semua sub-item "${task.title}" selesai! 🎉`);
+      showToast(`Semua sub-item "${task.title}" selesai!`);
     } else if (!allDone && task.completed && !isCompleted) {
       task.completed = false;
     }
@@ -1656,7 +1773,7 @@
     showConfirmDialog({
       title: 'Reset Status Tugas?',
       message: `Hapus tanda centang selesai dari ${completedCount} tugas terjadwal?`,
-      icon: '🧹',
+      icon: 'fa-solid fa-broom',
       confirmText: 'Ya, Reset',
       isDanger: false,
       onConfirm: () => {
@@ -1696,14 +1813,14 @@
 
       itemEl.innerHTML = `
         <div class="plan-item-info">
-          <span class="plan-item-icon">${index === 0 ? '📌' : '📑'}</span>
+          <span class="plan-item-icon">${index === 0 ? '<i class="fa-solid fa-thumbtack"></i>' : '<i class="fa-solid fa-folder-closed"></i>'}</span>
           <span class="plan-item-name" title="${escapeHtml(plan.name)}">${escapeHtml(plan.name)}</span>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
           <span class="plan-item-badge">${taskCount}</span>
           <div class="plan-item-tools">
-            <button class="tool-btn btn-edit-plan" title="Ubah Nama Plan">✏️</button>
-            ${state.data.plans.length > 1 ? `<button class="tool-btn btn-delete-plan" title="Hapus Plan">🗑️</button>` : ''}
+            <button class="tool-btn btn-edit-plan" title="Ubah Nama Plan"><i class="fa-solid fa-pen-to-square"></i></button>
+            ${state.data.plans.length > 1 ? `<button class="tool-btn btn-delete-plan" title="Hapus Plan"><i class="fa-solid fa-trash-can"></i></button>` : ''}
           </div>
         </div>
       `;
@@ -1836,7 +1953,7 @@
     showConfirmDialog({
       title: 'Hapus Plan Timeline?',
       message: `Seluruh jadwal di dalam plan "${escapeHtml(planName)}" akan dihapus permanen. Lanjutkan?`,
-      icon: '🗑️',
+      icon: 'fa-solid fa-trash-can',
       confirmText: 'Ya, Hapus Plan',
       isDanger: true,
       onConfirm: () => {
@@ -1889,16 +2006,16 @@
               ${isCurrentQ ? '<span class="day-pill-today">Aktif</span>' : ''}
               <span class="quarter-months-badge is-clickable" title="Klik untuk ubah tanggal & target kuartal">${escapeHtml(displayMonths)}</span>
             </div>
-            <button class="btn-edit-quarter" title="Edit Target & Tanggal Kuartal">✏️ Target</button>
+            <button class="btn-edit-quarter" title="Edit Target & Tanggal Kuartal"><i class="fa-solid fa-pen-to-square"></i> Target</button>
           </div>
 
           <div class="quarter-financial-pill">
-            <span class="financial-label">🎯 Target Goals (Rupiah):</span>
+            <span class="financial-label"><i class="fa-solid fa-bullseye"></i> Target Goals (Rupiah):</span>
             <span class="financial-value">${formatRupiah(qData.targetRupiah || 0)}</span>
           </div>
 
           <div class="quarter-strategy-box">
-            <span class="strategy-box-label">📝 Snapshot Rencana & Strategi</span>
+            <span class="strategy-box-label"><i class="fa-solid fa-clipboard-list"></i> Snapshot Rencana & Strategi</span>
             <span class="strategy-box-text">${escapeHtml(qData.strategy || 'Belum ada catatan strategi untuk kuartal ini.')}</span>
           </div>
         </div>
@@ -1911,7 +2028,7 @@
       // Drag over and drop on quarter column
       colEl.addEventListener('dragover', (e) => {
         e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
+        e.dataTransfer.dropEffect = 'copy';
         colEl.classList.add('is-drag-target');
       });
 
@@ -1929,7 +2046,11 @@
           if (raw) {
             const dragData = JSON.parse(raw);
             if (dragData && dragData.roadmapItemId && dragData.sourceQuarterKey) {
-              moveRoadmapItem(dragData.sourceQuarterKey, qKey, dragData.roadmapItemId);
+              if (dragData.sourceQuarterKey === qKey) {
+                duplicateRoadmapItem(dragData.sourceQuarterKey, dragData.roadmapItemId);
+              } else {
+                openRoadmapDragActionModal(dragData.sourceQuarterKey, qKey, dragData.roadmapItemId);
+              }
             }
           }
         } catch (err) {
@@ -1952,7 +2073,7 @@
           card.dataset.itemId = item.id;
           card.dataset.quarterKey = qKey;
           card.setAttribute('draggable', 'true');
-          card.title = 'Drag inisiatif ini ke kuartal lain untuk memindahkan';
+          card.title = 'Drag inisiatif ini ke kuartal lain untuk memindahkan / menduplikat';
 
           const durationText = calculateDaysDuration(item.startDate, item.finishDate);
           const statusLabels = {
@@ -1965,6 +2086,7 @@
             <div class="roadmap-card-top">
               <span class="roadmap-card-title">${escapeHtml(item.title)}</span>
               <div class="roadmap-card-actions">
+                <button class="tool-btn btn-dup-rm" title="Duplikat Inisiatif"><i class="fa-regular fa-clone"></i></button>
                 <button class="tool-btn btn-edit-rm" title="Edit Inisiatif"><i class="fa-solid fa-pen-to-square"></i></button>
                 <button class="tool-btn btn-del-rm" title="Hapus Inisiatif"><i class="fa-solid fa-trash-can"></i></button>
               </div>
@@ -2003,12 +2125,17 @@
               sourceQuarterKey: qKey
             });
             e.dataTransfer.setData('text/plain', payload);
-            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.effectAllowed = 'copyMove';
           });
 
           card.addEventListener('dragend', () => {
             card.classList.remove('is-dragging');
             document.querySelectorAll('.quarter-column').forEach(col => col.classList.remove('is-drag-target'));
+          });
+
+          card.querySelector('.btn-dup-rm').addEventListener('click', (e) => {
+            e.stopPropagation();
+            duplicateRoadmapItem(qKey, item.id);
           });
 
           card.querySelector('.btn-edit-rm').addEventListener('click', (e) => {
@@ -2074,7 +2201,7 @@
     saveData();
     renderRoadmapBoard();
     renderHeaderStats();
-    showToast(`Inisiatif "${item.title}" dipindahkan ke ${targetQKey} 🚀`);
+    showToast(`Inisiatif "${item.title}" dipindahkan ke ${targetQKey}`);
   }
 
   function openRoadmapItemModal(quarterKey = 'Q1', itemId = null) {
@@ -2165,7 +2292,7 @@
     showConfirmDialog({
       title: 'Hapus Inisiatif Roadmap?',
       message: `Hapus inisiatif "${escapeHtml(itemTitle)}" dari ${qKey}?`,
-      icon: '🚀',
+      icon: 'fa-solid fa-trash-can',
       confirmText: 'Ya, Hapus',
       isDanger: true,
       onConfirm: () => {
@@ -2366,7 +2493,7 @@
       year: 'numeric'
     });
 
-    if (DOM.tooltipHeader) DOM.tooltipHeader.textContent = `🎯 ${formattedDate}`;
+    if (DOM.tooltipHeader) DOM.tooltipHeader.innerHTML = `<i class="fa-solid fa-bullseye"></i> ${formattedDate}`;
     
     let contentHtml = '';
     goals.forEach(goal => {
@@ -2532,7 +2659,7 @@
     showConfirmDialog({
       title: 'Hapus Target?',
       message: `Hapus target "${escapeHtml(goalTitle)}" dari kalender goals?`,
-      icon: '🎯',
+      icon: 'fa-solid fa-bullseye',
       confirmText: 'Ya, Hapus',
       isDanger: true,
       onConfirm: () => {
@@ -3057,7 +3184,7 @@
         trip.tag = tag;
         trip.targetBudget = targetBudget;
         trip.notes = notes;
-        showToast('Rincian perjalanan berhasil diperbarui ✨');
+        showToast('Rincian perjalanan berhasil diperbarui');
       }
     } else {
       const newTrip = {
@@ -3076,7 +3203,7 @@
       state.data.trips.unshift(newTrip);
       state.data.activeTripId = newTrip.id;
       state.data.currentItinerarySubView = 'detail';
-      showToast('Perjalanan baru berhasil dibuat! 🎉');
+      showToast('Perjalanan baru berhasil dibuat!');
     }
 
     saveData();
@@ -3091,7 +3218,7 @@
     showConfirmDialog({
       title: 'Hapus Perjalanan?',
       message: `Apakah Anda yakin ingin menghapus "${escapeHtml(tripTitle)}" beserta seluruh daftar destinasi di dalamnya?`,
-      icon: '✈️',
+      icon: 'fa-solid fa-trash-can',
       confirmText: 'Ya, Hapus Trip',
       isDanger: true,
       onConfirm: () => {
@@ -3136,7 +3263,7 @@
     if (activityId) {
       const act = (trip.activities || []).find(a => a.id === activityId);
       if (!act) return;
-      if (DOM.activityModalTitle) DOM.activityModalTitle.textContent = '✏️ Edit Destinasi / Aktivitas';
+      if (DOM.activityModalTitle) DOM.activityModalTitle.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Edit Destinasi / Aktivitas';
       if (DOM.activityEditId) DOM.activityEditId.value = act.id;
       if (DOM.activityDaySelect) DOM.activityDaySelect.value = act.dayNumber || 1;
       if (DOM.activityStartTime) DOM.activityStartTime.value = act.startTime || '09:00';
@@ -3147,7 +3274,7 @@
       if (DOM.activityCostPreview) DOM.activityCostPreview.textContent = formatRupiah(act.cost || 0);
       if (DOM.activityNotes) DOM.activityNotes.value = act.notes || '';
     } else {
-      if (DOM.activityModalTitle) DOM.activityModalTitle.textContent = '📍 Tambah Destinasi / Aktivitas';
+      if (DOM.activityModalTitle) DOM.activityModalTitle.innerHTML = '<i class="fa-solid fa-plus"></i> Tambah Destinasi / Aktivitas';
       if (DOM.activityEditId) DOM.activityEditId.value = '';
       if (DOM.activityDaySelect) DOM.activityDaySelect.value = defaultDayNumber || 1;
       if (DOM.activityStartTime) DOM.activityStartTime.value = '09:00';
@@ -3200,7 +3327,7 @@
         act.category = category;
         act.cost = cost;
         act.notes = notes;
-        showToast('Destinasi diperbarui ✨');
+        showToast('Destinasi diperbarui');
       }
     } else {
       const newAct = {
@@ -3216,7 +3343,7 @@
         completed: false
       };
       trip.activities.push(newAct);
-      showToast('Destinasi baru ditambahkan ke itinerary! 📍');
+      showToast('Destinasi baru ditambahkan ke itinerary!');
     }
 
     saveData();
@@ -3314,11 +3441,11 @@
     DOM.shareTripTextPreview.select();
     navigator.clipboard.writeText(DOM.shareTripTextPreview.value)
       .then(() => {
-        showToast('Format WhatsApp berhasil disalin ke clipboard! 📋');
+        showToast('Format WhatsApp berhasil disalin ke clipboard!');
       })
       .catch(() => {
         document.execCommand('copy');
-        showToast('Format WhatsApp berhasil disalin ke clipboard! 📋');
+        showToast('Format WhatsApp berhasil disalin ke clipboard!');
       });
   }
 
@@ -3362,7 +3489,7 @@
     saveData();
     closeUserProfileModal();
     renderUserProfileNav();
-    showToast(`Profil pengguna diperbarui (${role === 'admin' ? 'Admin Mode' : 'Traveler Mode'}) 👤`);
+    showToast(`Profil pengguna diperbarui (${role === 'admin' ? 'Admin Mode' : 'Traveler Mode'})`);
   }
 
   function renderUserProfileNav() {
@@ -3392,7 +3519,7 @@
     undoBtn.addEventListener('click', () => {
       if (typeof onUndo === 'function') onUndo();
       toast.remove();
-      showToast('Aksi berhasil dibatalkan ↩️');
+      showToast('Aksi berhasil dibatalkan');
     });
 
     DOM.toastContainer.appendChild(toast);
@@ -3417,7 +3544,7 @@
     document.body.appendChild(a);
     a.click();
     a.remove();
-    showToast('Backup data berhasil diunduh 💾');
+    showToast('Backup data berhasil diunduh');
   }
 
   function triggerImport() {
@@ -3439,7 +3566,7 @@
           };
           saveData();
           renderAll();
-          showToast('Data berhasil dipulihkan dari backup! 🎉');
+          showToast('Data berhasil dipulihkan dari backup!');
         } else {
           showToast('Format JSON tidak sesuai', 'error');
         }
@@ -3758,8 +3885,9 @@
     if (!DOM.toastContainer) return;
     const toast = document.createElement('div');
     toast.className = 'toast-msg';
+    const iconClass = type === 'error' ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-circle-check';
     toast.innerHTML = `
-      <span>${type === 'error' ? '⚠️' : '✨'}</span>
+      <i class="${iconClass}" style="color: ${type === 'error' ? 'var(--priority-high)' : 'var(--primary)'}; font-size: 1rem;"></i>
       <span>${escapeHtml(msg)}</span>
     `;
 

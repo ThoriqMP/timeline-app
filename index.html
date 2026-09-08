@@ -14,42 +14,30 @@
 </head>
 <body>
   <div class="app-wrapper">
-    <!-- Top Navigation Header -->
-    <header class="navbar">
-      <div class="nav-left">
-        <div class="brand">
-          <div class="brand-logo-wrap">
-            <img src="logo.png" alt="TimelineFlow Calendar Logo" class="brand-img-logo" />
+    <!-- Top Navigation Header (Double-Layer Modern Architecture) -->
+    <header class="navbar-double-layer">
+      <!-- Tier 1: Brand & Utilities Bar -->
+      <div class="navbar-top-tier">
+        <div class="nav-brand-group">
+          <div class="brand">
+            <div class="brand-logo-wrap">
+              <img src="logo.png" alt="TimelineFlow Calendar Logo" class="brand-img-logo" />
+            </div>
+            <div class="brand-info">
+              <span class="brand-name">Timeline<span>Flow</span></span>
+            </div>
           </div>
-          <div class="brand-info">
-            <span class="brand-name">Timeline<span>Flow</span></span>
-            <button class="plan-pill-btn" id="currentPlanBtn" title="Ganti atau Kelola Plan Timeline">
-              <span id="currentPlanLabelBadge">Plan: Work Routine</span>
-              <i class="fa-solid fa-chevron-down plan-chevron"></i>
-            </button>
-          </div>
+
+          <div class="brand-plan-divider"></div>
+
+          <button class="plan-pill-btn" id="currentPlanBtn" title="Ganti atau Kelola Plan Timeline">
+            <i class="fa-solid fa-layer-group plan-pill-icon"></i>
+            <span id="currentPlanLabelBadge">Plan: Work Routine</span>
+            <i class="fa-solid fa-chevron-down plan-chevron"></i>
+          </button>
         </div>
-      </div>
 
-      <!-- Center: Seamless Mode Switcher & Dynamic Informative Stats -->
-      <div class="nav-center-unified">
-        <!-- Segmented Mode Switcher -->
-        <nav class="seamless-nav-switcher">
-          <button class="nav-tab-btn active" id="viewModeDailyBtn">
-            <i class="fa-solid fa-calendar-day"></i>
-            <span>Jadwal Harian</span>
-          </button>
-          <button class="nav-tab-btn" id="viewModeRoadmapBtn">
-            <i class="fa-solid fa-map-location-dot"></i>
-            <span>1-Year Roadmap</span>
-          </button>
-          <button class="nav-tab-btn" id="viewModeItineraryBtn">
-            <i class="fa-solid fa-plane-departure"></i>
-            <span>Itinerary Planner</span>
-          </button>
-        </nav>
-
-        <!-- Informative Contextual Stats Capsule -->
+        <!-- Center: Informative Contextual Stats Capsule -->
         <div class="stats-capsule-wrap">
           <div class="stats-capsule" id="headerStatsDaily">
             <div class="stat-pill-item">
@@ -99,38 +87,63 @@
             </div>
           </div>
         </div>
+
+        <!-- Right: Profile and Unified Action Toolbar -->
+        <div class="nav-top-right">
+          <!-- User Profile & Role Switcher -->
+          <button id="userProfileBtn" class="btn-seamless-user" title="Profil Pengguna & Role Otorisasi">
+            <span class="user-avatar-badge" id="navUserAvatar"><i class="fa-solid fa-user-astronaut"></i></span>
+            <span class="user-role-text" id="navUserRoleText">Traveler</span>
+            <i class="fa-solid fa-chevron-down role-chevron"></i>
+          </button>
+
+          <div class="top-nav-divider"></div>
+
+          <!-- Unified Tool Dock -->
+          <div class="nav-action-toolbar">
+            <button id="exportDataBtn" class="nav-tool-btn" title="Backup / Ekspor Data (JSON)">
+              <i class="fa-solid fa-file-arrow-down"></i>
+            </button>
+            <button id="importDataBtn" class="nav-tool-btn" title="Restore / Impor Data (JSON)">
+              <i class="fa-solid fa-file-arrow-up"></i>
+            </button>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;" />
+            
+            <div class="tool-divider"></div>
+
+            <button id="themeToggleBtn" class="nav-tool-btn theme-toggle-btn" title="Ganti Mode Gelap / Terang">
+              <i class="fa-solid fa-moon"></i>
+            </button>
+          </div>
+        </div>
       </div>
 
-      <!-- Right: Goals, User Profile, and Unified Action Toolbar -->
-      <div class="nav-right">
-        <!-- User Profile & Role Switcher -->
-        <button id="userProfileBtn" class="btn-seamless-user" title="Profil Pengguna & Role Otorisasi">
-          <span class="user-avatar-badge" id="navUserAvatar"><i class="fa-solid fa-user-astronaut"></i></span>
-          <span class="user-role-text" id="navUserRoleText">Traveler</span>
-          <i class="fa-solid fa-chevron-down role-chevron"></i>
-        </button>
+      <!-- Tier 2: Primary View Switcher & Action Hub -->
+      <div class="navbar-sub-tier">
+        <div class="sub-tier-left">
+          <!-- Segmented Mode Switcher -->
+          <nav class="seamless-nav-switcher">
+            <button class="nav-tab-btn active" id="viewModeDailyBtn">
+              <i class="fa-solid fa-calendar-day"></i>
+              <span>Jadwal Harian</span>
+            </button>
+            <button class="nav-tab-btn" id="viewModeRoadmapBtn">
+              <i class="fa-solid fa-map-location-dot"></i>
+              <span>1-Year Roadmap</span>
+            </button>
+            <button class="nav-tab-btn" id="viewModeItineraryBtn">
+              <i class="fa-solid fa-plane-departure"></i>
+              <span>Itinerary Planner</span>
+            </button>
+          </nav>
+        </div>
 
-        <!-- Goals Calendar Button -->
-        <button id="openGoalsBtn" class="btn-seamless-goals" title="Buka Kalender Goals & Milestones">
-          <span class="goals-icon-glow"><i class="fa-solid fa-bullseye"></i></span>
-          <span class="goals-btn-text">Goals</span>
-          <span class="badge-goals-count" id="headerGoalsBadge">0</span>
-        </button>
-
-        <!-- Unified Tool Dock -->
-        <div class="nav-action-toolbar">
-          <button id="exportDataBtn" class="nav-tool-btn" title="Backup / Ekspor Data (JSON)">
-            <i class="fa-solid fa-file-arrow-down"></i>
-          </button>
-          <button id="importDataBtn" class="nav-tool-btn" title="Restore / Impor Data (JSON)">
-            <i class="fa-solid fa-file-arrow-up"></i>
-          </button>
-          <input type="file" id="importFileInput" accept=".json" style="display: none;" />
-          
-          <div class="tool-divider"></div>
-
-          <button id="themeToggleBtn" class="nav-tool-btn theme-toggle-btn" title="Ganti Mode Gelap / Terang">
-            <i class="fa-solid fa-moon"></i>
+        <div class="sub-tier-right">
+          <!-- Goals Calendar Button -->
+          <button id="openGoalsBtn" class="btn-seamless-goals" title="Buka Kalender Goals & Milestones">
+            <span class="goals-icon-glow"><i class="fa-solid fa-bullseye"></i></span>
+            <span class="goals-btn-text">Goals Calendar</span>
+            <span class="badge-goals-count" id="headerGoalsBadge">0</span>
           </button>
         </div>
       </div>
@@ -219,7 +232,7 @@
         <div class="roadmap-header-bar">
           <div class="roadmap-title-meta">
             <div class="roadmap-heading-row">
-              <span class="roadmap-badge-icon">🗺️</span>
+              <span class="roadmap-badge-icon"><i class="fa-solid fa-map-location-dot"></i></span>
               <div>
                 <h2 class="roadmap-main-title">1-Year Strategic Roadmap</h2>
                 <p class="roadmap-sub-title">Pemetaan target tahunan terbagi dalam 4 kuartal dengan start, finish & target omset rupiah</p>
@@ -453,7 +466,7 @@
         </div>
 
         <div class="task-time-hint-banner" id="taskTimeHintBanner">
-          <span>☕ <strong>Jeda Istirahat:</strong> Otomatis dialokasikan 5 menit setelah tugas sebelumnya</span>
+          <span><i class="fa-solid fa-mug-hot"></i> <strong>Jeda Istirahat:</strong> Otomatis dialokasikan 5 menit setelah tugas sebelumnya</span>
         </div>
 
         <div class="input-field">
@@ -465,22 +478,22 @@
           <div class="input-field">
             <label for="taskCategory">Kategori</label>
             <select id="taskCategory" class="input-select">
-              <option value="work">💼 Work / Pekerjaan</option>
-              <option value="study">📚 Study / Belajar</option>
-              <option value="health">🏃 Health / Olahraga</option>
-              <option value="meeting">🤝 Meeting</option>
-              <option value="personal">🌟 Personal</option>
-              <option value="break">☕ Break / Santai</option>
+              <option value="work">Work / Pekerjaan</option>
+              <option value="study">Study / Belajar</option>
+              <option value="health">Health / Olahraga</option>
+              <option value="meeting">Meeting</option>
+              <option value="personal">Personal</option>
+              <option value="break">Break / Santai</option>
             </select>
           </div>
           <div class="input-field">
             <label for="taskColor">Aksen Warna</label>
             <select id="taskColor" class="input-select">
-              <option value="blue">🔵 Blue Ocean</option>
-              <option value="purple">🟣 Purple Violet</option>
-              <option value="emerald">🟢 Emerald Green</option>
-              <option value="amber">🟡 Amber Orange</option>
-              <option value="rose">🔴 Rose Pink</option>
+              <option value="blue">Blue Ocean</option>
+              <option value="purple">Purple Violet</option>
+              <option value="emerald">Emerald Green</option>
+              <option value="amber">Amber Orange</option>
+              <option value="rose">Rose Pink</option>
             </select>
           </div>
         </div>
@@ -621,10 +634,10 @@
               <div class="input-field">
                 <label for="goalPriority">Prioritas</label>
                 <select id="goalPriority" required class="input-select">
-                  <option value="high">🔴 High / Urgent</option>
-                  <option value="medium" selected>🟡 Medium</option>
-                  <option value="low">🟢 Low / Routine</option>
-                  <option value="milestone">🟣 Milestone</option>
+                  <option value="high">High / Urgent</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="low">Low / Routine</option>
+                  <option value="milestone">Milestone</option>
                 </select>
               </div>
             </div>
@@ -685,9 +698,9 @@
           <div class="input-field">
             <label for="roadmapStatusSelect">Status Progres</label>
             <select id="roadmapStatusSelect" required class="input-select">
-              <option value="planned">📅 Terencana (Planned)</option>
-              <option value="in_progress" selected>🚀 Sedang Berjalan (In Progress)</option>
-              <option value="completed">✅ Selesai (Completed)</option>
+              <option value="planned">Terencana (Planned)</option>
+              <option value="in_progress" selected>Sedang Berjalan (In Progress)</option>
+              <option value="completed">Selesai (Completed)</option>
             </select>
           </div>
         </div>
@@ -791,7 +804,7 @@
     <div class="modal-box modal-box-confirm">
       <div class="confirm-body">
         <div class="confirm-icon-wrap" id="confirmModalIconWrap">
-          <span class="confirm-icon" id="confirmModalIcon">🗑️</span>
+          <span class="confirm-icon" id="confirmModalIcon"><i class="fa-solid fa-trash-can"></i></span>
         </div>
         <h3 class="confirm-title" id="confirmModalTitle">Hapus Item?</h3>
         <p class="confirm-message" id="confirmModalMessage">Apakah Anda yakin ingin menghapus target ini?</p>
@@ -808,27 +821,27 @@
     <div class="modal-box modal-box-confirm modal-box-drag">
       <div class="confirm-body">
         <div class="confirm-icon-wrap" style="background: rgba(99, 102, 241, 0.12); border-color: rgba(99, 102, 241, 0.3);">
-          <span class="confirm-icon">🔀</span>
+          <span class="confirm-icon"><i class="fa-solid fa-shuffle"></i></span>
         </div>
-        <h3 class="confirm-title">Pilih Aksi Drag & Drop</h3>
+        <h3 class="confirm-title" id="dragModalTitle">Pilih Aksi Drag & Drop</h3>
         <p class="confirm-message" id="dragModalMessage">
           Tugas <span id="dragTaskHighlight" class="highlight-pill">...</span> akan dialokasikan ke <strong id="dragTargetDayName">...</strong>
         </p>
         
         <div class="drag-action-options">
           <button type="button" class="btn-drag-choice btn-choice-move" id="dragMoveBtn">
-            <span class="choice-icon">📦</span>
+            <span class="choice-icon"><i class="fa-solid fa-arrow-right-arrow-left"></i></span>
             <div class="choice-text">
               <strong>Pindahkan (Move)</strong>
-              <small>Pindahkan dari hari asal ke hari tujuan</small>
+              <small id="dragMoveSubtext">Pindahkan dari posisi asal ke posisi tujuan</small>
             </div>
           </button>
           
           <button type="button" class="btn-drag-choice btn-choice-duplicate" id="dragDuplicateBtn">
-            <span class="choice-icon">📋</span>
+            <span class="choice-icon"><i class="fa-regular fa-clone"></i></span>
             <div class="choice-text">
-              <strong>Duplikat (Duplicate)</strong>
-              <small>Salin tugas ke hari tujuan (tugas lama tetap ada)</small>
+              <strong>Duplikat / Salin (Duplicate)</strong>
+              <small id="dragDuplicateSubtext">Salin ke posisi tujuan (item lama tetap ada)</small>
             </div>
           </button>
         </div>

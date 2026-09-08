@@ -137,32 +137,49 @@ button {
    1. NAVBAR HEADER & MODE SWITCHER
    ========================================================================== */
 
-.navbar {
-  height: 60px;
-  background: var(--bg-panel);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border-subtle);
+/* ==========================================================================
+   1. DOUBLE-LAYER MODERN NAVIGATION SYSTEM
+   ========================================================================== */
+
+.navbar-double-layer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
+  flex-direction: column;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-subtle);
   position: relative;
   z-index: 100;
   flex-shrink: 0;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
   transition: all 0.2s ease;
 }
 
-[data-theme="light"] .navbar {
-  background: rgba(255, 255, 255, 0.92);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.85);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03);
+[data-theme="light"] .navbar-double-layer {
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
-.nav-left {
+/* Tier 1: Brand, Contextual Stats & Utility Controls */
+.navbar-top-tier {
+  height: 52px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  border-bottom: 1px solid var(--border-subtle);
   gap: 16px;
+}
+
+[data-theme="light"] .navbar-top-tier {
+  border-bottom-color: rgba(226, 232, 240, 0.7);
+}
+
+.nav-brand-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .brand {
@@ -172,9 +189,9 @@ button {
 }
 
 .brand-logo-wrap {
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -198,11 +215,10 @@ button {
 .brand-info {
   display: flex;
   align-items: center;
-  gap: 8px;
 }
 
 .brand-name {
-  font-size: 1.1rem;
+  font-size: 1.12rem;
   font-weight: 800;
   letter-spacing: -0.3px;
   color: var(--text-main);
@@ -214,20 +230,31 @@ button {
   -webkit-text-fill-color: transparent;
 }
 
+.brand-plan-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--border-subtle);
+}
+
 /* Plan Button Pill */
 .plan-pill-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 0.72rem;
+  gap: 6px;
+  font-size: 0.73rem;
   font-weight: 700;
   color: var(--text-muted);
   background: var(--bg-subtle);
   border: 1px solid var(--border-subtle);
-  padding: 4px 10px;
+  padding: 4px 11px;
   border-radius: var(--radius-full);
   cursor: pointer;
   transition: all 0.15s ease;
+}
+
+.plan-pill-icon {
+  color: var(--primary);
+  font-size: 0.72rem;
 }
 
 .plan-pill-btn:hover {
@@ -247,11 +274,38 @@ button {
   opacity: 1;
 }
 
-/* ==========================================================================
-   Seamless Unified Navigation Center & Contextual Stats
-   ========================================================================== */
+.nav-top-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
-.nav-center-unified {
+.top-nav-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--border-subtle);
+}
+
+/* Tier 2: Segmented Switcher & Primary Action Hub */
+.navbar-sub-tier {
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 22px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .navbar-sub-tier {
+  background: rgba(248, 250, 252, 0.85);
+}
+
+.sub-tier-left {
+  display: flex;
+  align-items: center;
+}
+
+.sub-tier-right {
   display: flex;
   align-items: center;
   gap: 12px;
