@@ -280,10 +280,93 @@ ipcMain.on('start-download-update', () => {
   }
 });
 
+// Directly apply update on macOS to support unsigned applications (bypassing Squirrel.Mac requirement)
+function applyMacUpdateAndRestart() {
+  const fs = require('fs');
+  const { spawn } = require('child_process');
+
+  const cacheDir = path.join(app.getPath('home'), 'Library/Caches/timelineflow-updater');
+  const pendingDir = path.join(cacheDir, 'pending');
+  const standardZip = path.join(cacheDir, 'update.zip');
+
+  let targetZip = null;
+  if (fs.existsSync(standardZip)) {
+    targetZip = standardZip;
+  } else if (fs.existsSync(pendingDir)) {
+    try {
+      const files = fs.readdirSync(pendingDir).filter(f => f.endsWith('.zip'));
+      if (files.length > 0) {
+        targetZip = path.join(pendingDir, files[0]);
+      }
+    } catch (e) {
+      console.warn('Gagal membaca direktori pending updater:', e);
+    }
+  }
+
+  const execPath = process.execPath;
+  const match = execPath.match(/^(\/.*?\.app)\//);
+  const currentAppBundle = match ? match[1] : null;
+
+  if (targetZip && currentAppBundle && fs.existsSync(currentAppBundle)) {
+    const scriptPath = path.join(app.getPath('temp'), `apply_timelineflow_update_${Date.now()}.sh`);
+    const scriptContent = `#!/bin/bash
+# Menunggu aplikasi lama benar-benar keluar
+while kill -0 ${process.pid} 2>/dev/null; do
+  sleep 0.3
+done
+sleep 0.5
+
+TMP_EXTRACT="/tmp/timelineflow_upgrade_$$"
+rm -rf "$TMP_EXTRACT"
+mkdir -p "$TMP_EXTRACT"
+
+# Ekstrak versi baru dari update.zip
+unzip -q -o "${targetZip}" -d "$TMP_EXTRACT"
+
+EXTRACTED_APP=$(find "$TMP_EXTRACT" -maxdepth 1 -name "*.app" | head -n 1)
+
+if [ -n "$EXTRACTED_APP" ] && [ -d "$EXTRACTED_APP" ]; then
+  xattr -cr "$EXTRACTED_APP" 2>/dev/null || true
+  rm -rf "${currentAppBundle}"
+  cp -R "$EXTRACTED_APP" "${currentAppBundle}"
+  chmod -R 755 "${currentAppBundle}"
+  xattr -cr "${currentAppBundle}" 2>/dev/null || true
+  rm -rf "$TMP_EXTRACT"
+  rm -f "${scriptPath}"
+  open "${currentAppBundle}"
+else
+  rm -rf "$TMP_EXTRACT"
+  rm -f "${scriptPath}"
+  open "${currentAppBundle}"
+fi
+`;
+
+    try {
+      fs.writeFileSync(scriptPath, scriptContent, { mode: 0o755 });
+      const child = spawn('/bin/bash', [scriptPath], {
+        detached: true,
+        stdio: 'ignore'
+      });
+      child.unref();
+      app.quit();
+      return;
+    } catch (err) {
+      console.error('Gagal menjalankan skrip pembaruan langsung macOS, beralih ke quitAndInstall:', err);
+    }
+  }
+
+  // Fallback ke default quitAndInstall
+  autoUpdater.quitAndInstall();
+}
+
 // IPC listener to install and restart
 ipcMain.on('install-update', () => {
   if (app.isPackaged) {
-    autoUpdater.quitAndInstall();
+    if (process.platform === 'darwin') {
+      applyMacUpdateAndRestart();
+    } else {
+      autoUpdater.quitAndInstall();
+    }
   } else {
     app.relaunch();
     app.quit();
