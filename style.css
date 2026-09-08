@@ -25,10 +25,10 @@
   --primary-hover: #4f46e5;
   --primary-glow: rgba(99, 102, 241, 0.25);
   
-  --gradient-brand: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
-  --gradient-goals: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
-  --gradient-gold: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
-  --gradient-travel: linear-gradient(135deg, #0284c7 0%, #2563eb 50%, #7c3aed 100%);
+  --gradient-brand: #4f46e5;
+  --gradient-goals: #7c3aed;
+  --gradient-gold: #d97706;
+  --gradient-travel: #0284c7;
 
   /* Priority Colors */
   --priority-high: #f43f5e;
@@ -743,8 +743,8 @@ button {
 }
 
 .day-column.is-today {
-  border-color: rgba(99, 102, 241, 0.6);
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.05) 0%, var(--bg-panel) 80px);
+  border-color: var(--primary);
+  background: var(--bg-panel);
 }
 
 /* Column Header */
@@ -879,7 +879,7 @@ button {
 .day-column.is-drag-target {
   border-color: var(--primary);
   box-shadow: 0 0 0 2px var(--primary), var(--shadow-card);
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, var(--bg-panel) 120px);
+  background: var(--bg-card);
 }
 
 /* 5-Minute Break Interval Indicator */
@@ -1624,8 +1624,8 @@ button {
 }
 
 .quarter-column.is-current-q {
-  border-color: rgba(99, 102, 241, 0.5);
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.04) 0%, var(--bg-panel) 90px);
+  border-color: var(--primary);
+  background: var(--bg-panel);
 }
 
 /* Quarter Header */
@@ -1775,7 +1775,7 @@ button {
 .quarter-column.is-drag-target {
   border-color: var(--primary) !important;
   box-shadow: 0 0 0 2px var(--primary), var(--shadow-card);
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, var(--bg-panel) 140px) !important;
+  background: var(--bg-card) !important;
 }
 
 .quarter-months-badge.is-clickable {
@@ -3020,7 +3020,7 @@ label {
 
 .trip-card-top-banner {
   height: 94px;
-  background: linear-gradient(135deg, rgba(2, 132, 199, 0.25) 0%, rgba(124, 58, 237, 0.25) 100%);
+  background: #1e293b;
   position: relative;
   display: flex;
   align-items: flex-end;
@@ -3029,7 +3029,7 @@ label {
 }
 
 [data-theme="light"] .trip-card-top-banner {
-  background: linear-gradient(135deg, #e0f2fe 0%, #ede9fe 100%);
+  background: #f1f5f9;
   border-bottom-color: #e2e8f0;
 }
 
@@ -3385,14 +3385,14 @@ label {
 /* Dark Mode Hero Banner */
 [data-theme="dark"] .trip-hero-banner,
 :root:not([data-theme="light"]) .trip-hero-banner {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+  background: #0f172a;
   border: 1px solid rgba(56, 189, 248, 0.25);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* Light Mode Hero Banner */
 [data-theme="light"] .trip-hero-banner {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 45%, #ede9fe 100%);
+  background: #f8fafc;
   border: 1px solid #bae6fd;
   box-shadow: 0 8px 24px rgba(2, 132, 199, 0.08);
 }
@@ -4051,19 +4051,34 @@ label {
   color: var(--text-main);
 }
 
-/* Print Styles */
+/* Print Report Container (Hidden on normal screen) */
+.print-report-container {
+  display: none;
+}
+
+/* Comprehensive & Immersive Print Styles */
 @media print {
-  body {
-    background: #ffffff !important;
-    color: #000000 !important;
-    height: auto !important;
-    overflow: visible !important;
+  @page {
+    margin: 1.2cm;
+    size: A4 portrait;
   }
 
+  body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide interactive application UI chrome */
   .navbar,
   .app-watermark-bar,
   .btn-gradient-travel,
   .btn-subtle,
+  .btn-primary,
   .modal-backdrop,
   .toast-area,
   .itinerary-days-bar,
@@ -4071,46 +4086,187 @@ label {
   .hero-actions-row,
   .itinerary-top-actions,
   .activity-actions-col,
-  .activity-maps-link {
+  .activity-maps-link,
+  .board-controls,
+  .sidebar-plans,
+  .roadmap-top-actions,
+  .btn-seamless-user,
+  .seamless-nav-switcher,
+  .nav-action-toolbar,
+  .update-modal-overlay,
+  .workspace {
     display: none !important;
   }
 
-  .app-wrapper,
-  .workspace,
-  .itinerary-area,
-  .itinerary-detail,
-  .activities-timeline-scroll {
-    overflow: visible !important;
-    height: auto !important;
+  /* Make print report container active and visible */
+  .print-report-container {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
     padding: 0 !important;
-  }
-
-  .trip-hero-banner {
-    background: #f8fafc !important;
-    border: 1px solid #cbd5e1 !important;
-    color: #000000 !important;
-    box-shadow: none !important;
-  }
-
-  .trip-hero-title {
-    color: #000000 !important;
-  }
-
-  .day-timeline-group {
     background: #ffffff !important;
-    border: 1px solid #cbd5e1 !important;
-    box-shadow: none !important;
+    color: #0f172a !important;
+  }
+
+  .print-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+  }
+
+  .print-brand-col {
+    flex: 1;
+  }
+
+  .print-brand-badge {
+    display: inline-block;
+    font-size: 8pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #4f46e5;
+    background: #eef2ff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+  }
+
+  .print-doc-title {
+    font-size: 18pt;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.3px;
+    margin: 0 0 4px;
+  }
+
+  .print-doc-subtitle {
+    font-size: 9.5pt;
+    color: #475569;
+    margin: 0;
+  }
+
+  .print-meta-col {
+    text-align: right;
+    font-size: 8.5pt;
+    color: #64748b;
+    line-height: 1.6;
+  }
+
+  .print-meta-col strong {
+    color: #0f172a;
+  }
+
+  /* Key Metrics Cards in Print */
+  .print-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  .print-kpi-card {
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 10px 12px;
+    background: #f8fafc;
+  }
+
+  .print-kpi-label {
+    font-size: 7.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748b;
+    margin-bottom: 4px;
+  }
+
+  .print-kpi-val {
+    font-size: 13pt;
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  /* Print Section & Tables */
+  .print-section {
+    margin-bottom: 22px;
     page-break-inside: avoid;
+  }
+
+  .print-section-title {
+    font-size: 11pt;
+    font-weight: 700;
+    color: #0f172a;
+    border-bottom: 1.5px solid #e2e8f0;
+    padding-bottom: 6px;
+    margin: 0 0 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
     margin-bottom: 16px;
+    font-size: 9pt;
   }
 
-  .activity-card {
-    background: #ffffff !important;
-    border: 1px solid #e2e8f0 !important;
+  .print-table th {
+    background: #f1f5f9;
+    color: #1e293b;
+    font-weight: 700;
+    text-align: left;
+    padding: 7px 10px;
+    border: 1px solid #cbd5e1;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
   }
 
-  .activity-title-text {
-    color: #000000 !important;
+  .print-table td {
+    padding: 7px 10px;
+    border: 1px solid #e2e8f0;
+    vertical-align: top;
+    color: #1e293b;
+  }
+
+  .print-table tr:nth-child(even) td {
+    background: #f8fafc;
+  }
+
+  .print-badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 7.5pt;
+    font-weight: 700;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #1e293b;
+  }
+
+  .print-subitems-list {
+    margin: 4px 0 0;
+    padding-left: 18px;
+    font-size: 8.5pt;
+    color: #334155;
+  }
+
+  .print-subitems-list li {
+    margin-bottom: 2px;
+  }
+
+  .print-footer {
+    border-top: 1px solid #cbd5e1;
+    padding-top: 8px;
+    margin-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 8pt;
+    color: #94a3b8;
   }
 }
 
@@ -4125,7 +4281,7 @@ label {
 }
 
 .modal-icon-update {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(6, 182, 212, 0.25));
+  background: rgba(99, 102, 241, 0.15);
   border: 1px solid rgba(99, 102, 241, 0.35);
   color: #38bdf8;
 }
@@ -4195,10 +4351,11 @@ label {
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: conic-gradient(from 0deg at 50% 50%, rgba(99, 102, 241, 0) 0deg, rgba(99, 102, 241, 0.25) 300deg, rgba(6, 182, 212, 0.5) 360deg);
-  animation: radarRotate 2s linear infinite;
-  mask-image: radial-gradient(circle, transparent 30%, black 70%);
-  -webkit-mask-image: radial-gradient(circle, transparent 30%, black 70%);
+  border-top: 2.5px solid #38bdf8;
+  border-right: 2.5px solid transparent;
+  border-bottom: 2.5px solid transparent;
+  border-left: 2.5px solid transparent;
+  animation: radarRotate 1.8s linear infinite;
 }
 
 .radar-center-orb {
@@ -4207,13 +4364,13 @@ label {
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), #3b82f6);
+  background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffffff;
   font-size: 1.2rem;
-  box-shadow: 0 0 20px var(--primary-glow);
+  box-shadow: 0 0 16px var(--primary-glow);
   animation: centerOrbPulse 1.8s ease-in-out infinite alternate;
 }
 
@@ -4403,12 +4560,12 @@ label {
 }
 
 .btn-gradient-update {
-  background: linear-gradient(135deg, #6366f1, #0284c7) !important;
-  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35) !important;
+  background: var(--primary) !important;
+  box-shadow: 0 4px 14px var(--primary-glow) !important;
 }
 
 .btn-gradient-update:hover {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
   transform: translateY(-1px);
 }
 
@@ -4453,8 +4610,8 @@ label {
 .update-progress-fill {
   height: 100%;
   border-radius: var(--radius-full);
-  background: linear-gradient(90deg, #6366f1, #38bdf8);
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary-glow);
   transition: width 0.25s ease;
 }
 

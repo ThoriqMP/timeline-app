@@ -101,6 +101,9 @@
 
           <!-- Unified Tool Dock -->
           <div class="nav-action-toolbar">
+            <button id="quickPrintNavBtn" class="nav-tool-btn" title="Cetak Laporan PDF (Tampilan Aktif)">
+              <i class="fa-solid fa-print"></i>
+            </button>
             <button id="checkUpdateNavBtn" class="nav-tool-btn" title="Periksa Pembaruan Sistem">
               <i class="fa-solid fa-arrows-rotate"></i>
             </button>
@@ -171,6 +174,10 @@
           </div>
 
           <div class="board-controls">
+            <button id="printDailyPlanBtn" class="btn-subtle" title="Cetak Laporan Jadwal Harian ke PDF">
+              <i class="fa-solid fa-file-pdf"></i>
+              <span>Cetak PDF</span>
+            </button>
             <button id="clearCompletedBtn" class="btn-subtle" title="Hapus centang status selesai">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
               <span>Reset Status</span>
@@ -244,6 +251,10 @@
           </div>
 
           <div class="roadmap-top-actions">
+            <button id="printRoadmapBtn" class="btn-subtle" title="Cetak Laporan Roadmap 1 Tahun ke PDF">
+              <i class="fa-solid fa-file-pdf"></i>
+              <span>Cetak PDF</span>
+            </button>
             <!-- Year Selector -->
             <div class="year-selector-wrap">
               <label for="roadmapYearSelect">Tahun:</label>
@@ -777,6 +788,10 @@
           </div>
         </div>
 
+        <div id="quarterQ1CascadeHint" style="display: none; padding: 8px 12px; background: rgba(79, 70, 229, 0.1); border: 1px solid rgba(79, 70, 229, 0.25); border-radius: var(--radius-sm); font-size: 0.76rem; color: #818cf8; margin-bottom: 12px;">
+          <i class="fa-solid fa-circle-info"></i> Mengubah tanggal <strong>Q1</strong> akan otomatis menyelaraskan rentang tanggal untuk <strong>Q2, Q3, dan Q4</strong> secara berurutan.
+        </div>
+
         <div class="input-field">
           <label for="quarterMetaPeriodLabel">Label Periode Dinamis</label>
           <input type="text" id="quarterMetaPeriodLabel" class="input-text" placeholder="Contoh: Januari - Maret 2026 atau Q1 Jan-Mar" />
@@ -1291,6 +1306,9 @@
 
   <!-- Notification Toast Container -->
   <div class="toast-area" id="toastContainer"></div>
+
+  <!-- Dedicated Comprehensive Print Container (A4 Printable Reports) -->
+  <div id="printReportContainer" class="print-report-container"></div>
 
   <script src="app.js"></script>
 </body>

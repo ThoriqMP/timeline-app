@@ -547,6 +547,7 @@
       userProfileBtn: document.getElementById('userProfileBtn'),
       navUserAvatar: document.getElementById('navUserAvatar'),
       navUserRoleText: document.getElementById('navUserRoleText'),
+      quickPrintNavBtn: document.getElementById('quickPrintNavBtn'),
       exportDataBtn: document.getElementById('exportDataBtn'),
       importDataBtn: document.getElementById('importDataBtn'),
       importFileInput: document.getElementById('importFileInput'),
@@ -561,6 +562,7 @@
       // Daily Schedule
       activePlanHeading: document.getElementById('activePlanHeading'),
       renamePlanBtn: document.getElementById('renamePlanBtn'),
+      printDailyPlanBtn: document.getElementById('printDailyPlanBtn'),
       quickAddTaskBtn: document.getElementById('quickAddTaskBtn'),
       clearCompletedBtn: document.getElementById('clearCompletedBtn'),
       daysGrid: document.getElementById('daysGrid'),
@@ -574,7 +576,11 @@
       // Roadmap
       roadmapYearSelect: document.getElementById('roadmapYearSelect'),
       addRoadmapItemBtn: document.getElementById('addRoadmapItemBtn'),
+      printRoadmapBtn: document.getElementById('printRoadmapBtn'),
       quartersGrid: document.getElementById('quartersGrid'),
+
+      // Print Report Container
+      printReportContainer: document.getElementById('printReportContainer'),
 
       // Itinerary Dashboard & Detail
       itineraryDashboardView: document.getElementById('itineraryDashboardView'),
@@ -683,6 +689,7 @@
       quarterMetaKey: document.getElementById('quarterMetaKey'),
       quarterMetaStartDate: document.getElementById('quarterMetaStartDate'),
       quarterMetaEndDate: document.getElementById('quarterMetaEndDate'),
+      quarterQ1CascadeHint: document.getElementById('quarterQ1CascadeHint'),
       quarterMetaPeriodLabel: document.getElementById('quarterMetaPeriodLabel'),
       quarterMetaTargetRupiah: document.getElementById('quarterMetaTargetRupiah'),
       quarterRupiahPreview: document.getElementById('quarterRupiahPreview'),
@@ -2360,6 +2367,11 @@
       DOM.quarterMetaPeriodLabel.value = qData.periodLabel || '';
     }
 
+    // Toggle cascade hint for Q1
+    if (DOM.quarterQ1CascadeHint) {
+      DOM.quarterQ1CascadeHint.style.display = (qKey === 'Q1') ? 'block' : 'none';
+    }
+
     DOM.quarterMetaModalOverlay.classList.add('is-active');
     setTimeout(() => DOM.quarterMetaTargetRupiah.focus(), 50);
   }
@@ -2368,6 +2380,56 @@
     DOM.quarterMetaModalOverlay.classList.remove('is-active');
     DOM.quarterMetaForm.reset();
     state.editingQuarterKey = null;
+  }
+
+  // Sequential Cascade: Automatically adjust Q2, Q3, and Q4 dates from Q1
+  function cascadeQuarterDatesFromQ1(q1Start, q1End) {
+    if (!q1Start || !q1End) return;
+    const s1 = new Date(q1Start + 'T00:00:00');
+    const e1 = new Date(q1End + 'T00:00:00');
+    if (isNaN(s1.getTime()) || isNaN(e1.getTime()) || e1 <= s1) return;
+
+    const diffMs = e1.getTime() - s1.getTime();
+    const dayMs = 24 * 60 * 60 * 1000;
+
+    const toISO = (d) => {
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}`;
+    };
+
+    const s2 = new Date(e1.getTime() + dayMs);
+    const e2 = new Date(s2.getTime() + diffMs);
+
+    const s3 = new Date(e2.getTime() + dayMs);
+    const e3 = new Date(s3.getTime() + diffMs);
+
+    const s4 = new Date(e3.getTime() + dayMs);
+    const e4 = new Date(s4.getTime() + diffMs);
+
+    const cascades = [
+      { key: 'Q2', start: toISO(s2), end: toISO(e2) },
+      { key: 'Q3', start: toISO(s3), end: toISO(e3) },
+      { key: 'Q4', start: toISO(s4), end: toISO(e4) }
+    ];
+
+    cascades.forEach(({ key, start, end }) => {
+      if (!state.data.roadmap[key]) {
+        const meta = QUARTERS_META[key];
+        state.data.roadmap[key] = {
+          targetRupiah: meta.defaultTarget,
+          strategy: '',
+          startDate: start,
+          endDate: end,
+          periodLabel: '',
+          items: []
+        };
+      } else {
+        state.data.roadmap[key].startDate = start;
+        state.data.roadmap[key].endDate = end;
+      }
+    });
   }
 
   function handleQuarterMetaFormSubmit(e) {
@@ -2398,10 +2460,20 @@
       state.data.roadmap[qKey].periodLabel = DOM.quarterMetaPeriodLabel.value.trim();
     }
 
+    let cascadeMsg = '';
+    if (qKey === 'Q1') {
+      const q1Start = DOM.quarterMetaStartDate ? DOM.quarterMetaStartDate.value : null;
+      const q1End = DOM.quarterMetaEndDate ? DOM.quarterMetaEndDate.value : null;
+      if (q1Start && q1End) {
+        cascadeQuarterDatesFromQ1(q1Start, q1End);
+        cascadeMsg = ' (Jadwal Kuartal 2, 3, dan 4 telah diselaraskan otomatis)';
+      }
+    }
+
     saveData();
     closeQuarterMetaModal();
     renderAll();
-    showToast(`Target & tanggal ${qKey} berhasil disimpan!`);
+    showToast(`Target & tanggal ${qKey} berhasil disimpan!${cascadeMsg}`);
   }
 
   // ==========================================================================
@@ -3481,9 +3553,470 @@
       });
   }
 
-  function printTripItinerary() {
+  // ==========================================================================
+  // COMPREHENSIVE & IMMERSIVE PRINT REPORT GENERATOR (PDF READY)
+  // ==========================================================================
+
+  function printDailyPlanReport() {
+    if (!DOM.printReportContainer) return;
+    DOM.printReportContainer.innerHTML = generateDailyPlanReportHTML();
+    setTimeout(() => {
+      window.print();
+    }, 50);
+  }
+
+  function printRoadmapReport() {
+    if (!DOM.printReportContainer) return;
+    DOM.printReportContainer.innerHTML = generateRoadmapReportHTML();
+    setTimeout(() => {
+      window.print();
+    }, 50);
+  }
+
+  function printItineraryReport() {
+    if (!DOM.printReportContainer) return;
     closeShareTripModal();
-    window.print();
+    DOM.printReportContainer.innerHTML = generateItineraryReportHTML();
+    setTimeout(() => {
+      window.print();
+    }, 50);
+  }
+
+  function printTripItinerary() {
+    printItineraryReport();
+  }
+
+  function printActiveViewReport() {
+    const view = state.data.viewMode || 'daily';
+    if (view === 'roadmap') {
+      printRoadmapReport();
+    } else if (view === 'itinerary') {
+      printItineraryReport();
+    } else {
+      printDailyPlanReport();
+    }
+  }
+
+  function generateDailyPlanReportHTML() {
+    const plan = (state.data.plans || []).find(p => p.id === state.data.activePlanId) || (state.data.plans && state.data.plans[0]) || { title: 'Work Routine (Utama)', days: {} };
+    const daysOrder = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    
+    let totalTasks = 0;
+    let completedTasks = 0;
+    let totalItems = 0;
+    let totalMinutes = 0;
+
+    daysOrder.forEach(day => {
+      const tasks = (plan.days && plan.days[day]) || [];
+      tasks.forEach(t => {
+        totalTasks++;
+        if (t.completed) completedTasks++;
+        if (t.items && Array.isArray(t.items)) {
+          totalItems += t.items.length;
+        }
+        totalMinutes += Math.max(0, timeToMinutes(t.endTime) - timeToMinutes(t.startTime));
+      });
+    });
+
+    const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    const totalHours = (totalMinutes / 60).toFixed(1);
+    const dateFormatted = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    let daysHtml = '';
+    daysOrder.forEach(day => {
+      const tasks = (plan.days && plan.days[day]) || [];
+      if (tasks.length === 0) return;
+
+      let taskRows = '';
+      tasks.forEach(t => {
+        const statusBadge = t.completed ? '<span class="print-badge" style="color:#10b981; border-color:#10b981;">✓ Selesai</span>' : '<span class="print-badge" style="color:#4f46e5;">• Terjadwal</span>';
+        const priorityBadge = `<span class="print-badge" style="text-transform: capitalize;">${escapeHtml(t.priority || 'Medium')}</span>`;
+        
+        let subitemsList = '';
+        if (t.items && t.items.length > 0) {
+          subitemsList = '<ul class="print-subitems-list">';
+          t.items.forEach(item => {
+            const check = item.completed ? '☑' : '☐';
+            subitemsList += `<li>${check} ${escapeHtml(item.title || '')}</li>`;
+          });
+          subitemsList += '</ul>';
+        }
+
+        taskRows += `
+          <tr>
+            <td style="font-family: monospace; font-weight: 700; width: 110px;">${escapeHtml(t.startTime || '')} - ${escapeHtml(t.endTime || '')}</td>
+            <td>
+              <strong>${escapeHtml(t.title || '')}</strong>
+              <div style="font-size: 7.5pt; color: #64748b; margin-top: 2px;">Kategori: ${escapeHtml(t.category || 'Work')}</div>
+            </td>
+            <td style="width: 85px;">${priorityBadge}</td>
+            <td>${subitemsList || '<span style="color:#94a3b8; font-size:8pt;">-</span>'}</td>
+            <td style="width: 85px; text-align: center;">${statusBadge}</td>
+          </tr>
+        `;
+      });
+
+      daysHtml += `
+        <div class="print-section">
+          <div class="print-section-title">
+            <span>📅 ${day}</span>
+            <span style="font-size: 8.5pt; font-weight: normal; color: #64748b;">${tasks.length} Agenda Tugas</span>
+          </div>
+          <table class="print-table">
+            <thead>
+              <tr>
+                <th>Waktu</th>
+                <th>Aktivitas & Kategori</th>
+                <th>Prioritas</th>
+                <th>Checklist Sub-Pekerjaan</th>
+                <th style="text-align: center;">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${taskRows}
+            </tbody>
+          </table>
+        </div>
+      `;
+    });
+
+    if (!daysHtml) {
+      daysHtml = '<p style="text-align: center; color: #64748b; padding: 20px;">Belum ada tugas atau jadwal pada plan ini.</p>';
+    }
+
+    return `
+      <div class="print-header">
+        <div class="print-brand-col">
+          <div class="print-brand-badge">TimelineFlow • Productivity Planner</div>
+          <h1 class="print-doc-title">Laporan Rencana Kerja & Jadwal Rutin</h1>
+          <p class="print-doc-subtitle">Plan: <strong>${escapeHtml(plan.title || 'Work Routine')}</strong> — Evaluasi Alokasi Waktu Mingguan</p>
+        </div>
+        <div class="print-meta-col">
+          <div>Tanggal Laporan: <strong>${dateFormatted}</strong></div>
+          <div>Dokumen: <strong>Official Schedule Report</strong></div>
+        </div>
+      </div>
+
+      <div class="print-kpi-grid">
+        <div class="print-kpi-card">
+          <div class="print-kpi-label">Total Agenda Tugas</div>
+          <div class="print-kpi-val">${totalTasks}</div>
+        </div>
+        <div class="print-kpi-card">
+          <div class="print-kpi-label">Tugas Terselesaikan</div>
+          <div class="print-kpi-val" style="color: #10b981;">${completedTasks} <span style="font-size: 9pt; font-weight: normal;">(${completionRate}%)</span></div>
+        </div>
+        <div class="print-kpi-card">
+          <div class="print-kpi-label">Alokasi Waktu Kerja</div>
+          <div class="print-kpi-val">${totalHours} <span style="font-size: 9pt; font-weight: normal;">Jam</span></div>
+        </div>
+        <div class="print-kpi-card">
+          <div class="print-kpi-label">Sub-Item Checklist</div>
+          <div class="print-kpi-val">${totalItems}</div>
+        </div>
+      </div>
+
+      ${daysHtml}
+
+      <div class="print-footer">
+        <span>TimelineFlow Desktop App • Laporan Rencana Harian</span>
+        <span>Halaman 1 • Dicetak dari Sistem TimelineFlow</span>
+      </div>
+    `;
+  }
+
+  function generateRoadmapReportHTML() {
+    const year = state.data.roadmapYear || 2026;
+    const roadmap = state.data.roadmap || {};
+    const qKeys = ['Q1', 'Q2', 'Q3', 'Q4'];
+    
+    let totalTargetRupiah = 0;
+    let totalInitiatives = 0;
+    let completedInitiatives = 0;
+
+    qKeys.forEach(k => {
+      const q = roadmap[k] || {};
+      totalTargetRupiah += Number(q.targetRupiah || 0);
+      const items = q.items || [];
+      totalInitiatives += items.length;
+      completedInitiatives += items.filter(i => (i.progress || 0) >= 100).length;
+    });
+
+    const dateFormatted = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    let qSummaryRows = '';
+    qKeys.forEach(k => {
+      const meta = QUARTERS_META[k];
+      const q = roadmap[k] || {};
+      const target = q.targetRupiah || meta.defaultTarget || 0;
+      const period = q.periodLabel || (q.startDate && q.endDate ? `${formatDateIndo(q.startDate)} - ${formatDateIndo(q.endDate)}` : meta.months);
+      const itemsCount = (q.items || []).length;
+      const strategy = q.strategy || '-';
+
+      qSummaryRows += `
+        <tr>
+          <td style="font-weight: 800; color: #4f46e5;">${meta.label}</td>
+          <td>${escapeHtml(period)}</td>
+          <td style="font-weight: 700; font-family: monospace;">${formatRupiah(target)}</td>
+          <td>${escapeHtml(strategy)}</td>
+          <td style="text-align: center; font-weight: 700;">${itemsCount}</td>
+        </tr>
+      `;
+    });
+
+    let qDetailSections = '';
+    qKeys.forEach(k => {
+      const meta = QUARTERS_META[k];
+      const q = roadmap[k] || {};
+      const items = q.items || [];
+      const period = q.periodLabel || (q.startDate && q.endDate ? `${formatDateIndo(q.startDate)} - ${formatDateIndo(q.endDate)}` : meta.months);
+
+      let itemRows = '';
+      if (items.length > 0) {
+        items.forEach(item => {
+          let subitemsHtml = '';
+          if (item.items && item.items.length > 0) {
+            subitemsHtml = '<ul class="print-subitems-list">';
+            item.items.forEach(sub => {
+              const chk = sub.completed ? '☑' : '☐';
+              subitemsHtml += `<li>${chk} ${escapeHtml(sub.title || '')}</li>`;
+            });
+            subitemsHtml += '</ul>';
+          }
+
+          const dateRange = (item.startDate && item.endDate) ? `${formatDateIndo(item.startDate)} - ${formatDateIndo(item.endDate)}` : (item.date || '-');
+          const targetRp = item.targetRupiah ? formatRupiah(item.targetRupiah) : '-';
+          const progress = Number(item.progress || 0);
+          const progBadge = progress >= 100 
+            ? '<span class="print-badge" style="color:#10b981; border-color:#10b981;">100% Selesai</span>'
+            : `<span class="print-badge" style="color:#4f46e5;">${progress}%</span>`;
+
+          itemRows += `
+            <tr>
+              <td>
+                <strong>${escapeHtml(item.title || '')}</strong>
+                ${item.description ? `<div style="font-size:7.5pt; color:#64748b; margin-top:2px;">${escapeHtml(item.description)}</div>` : ''}
+              </td>
+              <td><span class="print-badge">${escapeHtml(item.category || 'Strategic')}</span></td>
+              <td style="font-size:8pt;">${escapeHtml(dateRange)}</td>
+              <td style="font-family: monospace; font-weight: 600;">${targetRp}</td>
+              <td>${subitemsHtml || '<span style="color:#94a3b8; font-size:8pt;">-</span>'}</td>
+              <td style="text-align: center;">${progBadge}</td>
+            </tr>
+          `;
+        });
+      } else {
+        itemRows = `<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:12px;">Belum ada inisiatif terdaftar pada ${meta.label}.</td></tr>`;
+      }
+
+      qDetailSections += `
+        <div class="print-section">
+          <div class="print-section-title">
+            <span>🎯 ${meta.label} (${escapeHtml(period)})</span>
+            <span style="font-size: 8.5pt; font-weight: normal; color: #4f46e5; font-weight: 700;">Target: ${formatRupiah(q.targetRupiah || meta.defaultTarget || 0)}</span>
+          </div>
+          <table class="print-table">
+            <thead>
+              <tr>
+                <th>Inisiatif / Milestone</th>
+                <th style="width: 80px;">Kategori</th>
+                <th style="width: 140px;">Target Jadwal</th>
+                <th style="width: 120px;">Target Finansial</th>
+                <th>Checklist Sub-Item</th>
+                <th style="width: 80px; text-align: center;">Progress</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${itemRows}
+            </tbody>
+          </table>
+        </div>
+      `;
+    });
+
+    return `
+      <div class="print-header">
+        <div class="print-brand-col">
+          <div class="print-brand-badge">TimelineFlow • Strategic Roadmap</div>
+          <h1 class="print-doc-title">Laporan Roadmap Tahunan & Target Kuartal (${year})</h1>
+          <p class="print-doc-subtitle">Pemetaan Target Finansial, Milestone Strategis & Eksekusi Kuartal 1 - 4</p>
+        </div>
+        <div class="print-meta-col">
+          <div>Tanggal Laporan: <strong>${dateFormatted}</strong></div>
+          <div>Tahun Strategis: <strong>${year}</strong></div>
+        </div>
+      </div>
+
+      <div class="print-kpi-grid">
+        <div class="print-kpi-card">
+          <div class="print-kpi-label">Total Target Omset Tahunan</div>
+          <div class="print-kpi-val" style="color: #4f46e5; font-size: 11pt;">${formatRupiah(totalTargetRupiah)}</div>
+        </div>
+        <div class="print-kpi-card">
+          <div class="print-kpi-label">Total Inisiatif Strategis</div>
+          <div class="print-kpi-val">${totalInitiatives}</div>
+        </div>
+        <div class="print-kpi-card">
+          <div class="print-kpi-label">Inisiatif Tuntas (100%)</div>
+          <div class="print-kpi-val" style="color: #10b981;">${completedInitiatives}</div>
+        </div>
+        <div class="print-kpi-card">
+          <div class="print-kpi-label">Rata-rata Target / Kuartal</div>
+          <div class="print-kpi-val" style="font-size: 11pt;">${formatRupiah(Math.round(totalTargetRupiah / 4))}</div>
+        </div>
+      </div>
+
+      <div class="print-section">
+        <div class="print-section-title">
+          <span>📊 Ringkasan Eksekutif 4 Kuartal (${year})</span>
+        </div>
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th style="width: 130px;">Kuartal</th>
+              <th style="width: 170px;">Periode Waktu</th>
+              <th style="width: 150px;">Target Omset</th>
+              <th>Fokus & Snapshot Strategi</th>
+              <th style="width: 70px; text-align: center;">Inisiatif</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${qSummaryRows}
+          </tbody>
+        </table>
+      </div>
+
+      ${qDetailSections}
+
+      <div class="print-footer">
+        <span>TimelineFlow Desktop App • Laporan Roadmap Tahunan</span>
+        <span>Halaman 1 • Dicetak dari Sistem TimelineFlow</span>
+      </div>
+    `;
+  }
+
+  function generateItineraryReportHTML() {
+    const trip = (state.data.trips || []).find(t => t.id === state.data.activeTripId) || (state.data.trips && state.data.trips[0]);
+    const dateFormatted = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    if (!trip) {
+      return `
+        <div class="print-header">
+          <div class="print-brand-col">
+            <h1 class="print-doc-title">Laporan Itinerary Perjalanan</h1>
+            <p class="print-doc-subtitle">Belum ada trip perjalanan yang dipilih.</p>
+          </div>
+        </div>
+      `;
+    }
+
+    const activities = (state.data.activities || []).filter(a => a.tripId === trip.id);
+    let totalExpense = 0;
+    activities.forEach(a => { totalExpense += Number(a.cost || 0); });
+
+    const targetBudget = Number(trip.targetBudget || 0);
+    const budgetDiff = targetBudget - totalExpense;
+    const diffColor = budgetDiff >= 0 ? '#10b981' : '#f43f5e';
+    const diffText = budgetDiff >= 0 ? `Sisa ${formatRupiah(budgetDiff)}` : `Over ${formatRupiah(Math.abs(budgetDiff))}`;
+
+    const dayGroups = {};
+    activities.forEach(a => {
+      const d = a.day || 'Hari 1';
+      if (!dayGroups[d]) dayGroups[d] = [];
+      dayGroups[d].push(a);
+    });
+
+    let daySections = '';
+    const sortedDays = Object.keys(dayGroups).sort();
+    sortedDays.forEach(dayName => {
+      const dayActs = dayGroups[dayName].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+      let actRows = '';
+      let dayTotalCost = 0;
+
+      dayActs.forEach(act => {
+        dayTotalCost += Number(act.cost || 0);
+        const costStr = Number(act.cost) > 0 ? formatRupiah(act.cost) : 'Gratis';
+        actRows += `
+          <tr>
+            <td style="font-family: monospace; font-weight: 700; width: 85px;">${escapeHtml(act.time || '-')}</td>
+            <td>
+              <strong>${escapeHtml(act.title || '')}</strong>
+              ${act.notes ? `<div style="font-size:7.5pt; color:#64748b; margin-top:2px;">${escapeHtml(act.notes)}</div>` : ''}
+            </td>
+            <td>${escapeHtml(act.location || '-')}</td>
+            <td><span class="print-badge">${escapeHtml(act.category || 'Wisata')}</span></td>
+            <td style="font-family: monospace; font-weight: 600; text-align: right;">${costStr}</td>
+          </tr>
+        `;
+      });
+
+      daySections += `
+        <div class="print-section">
+          <div class="print-section-title">
+            <span>📍 ${escapeHtml(dayName)}</span>
+            <span style="font-size: 8.5pt; font-weight: normal; color: #64748b;">Subtotal: ${formatRupiah(dayTotalCost)}</span>
+          </div>
+          <table class="print-table">
+            <thead>
+              <tr>
+                <th>Waktu</th>
+                <th>Aktivitas & Keterangan</th>
+                <th>Lokasi Destinasi</th>
+                <th style="width: 85px;">Kategori</th>
+                <th style="width: 120px; text-align: right;">Estimasi Biaya</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${actRows}
+            </tbody>
+          </table>
+        </div>
+      `;
+    });
+
+    if (!daySections) {
+      daySections = '<p style="text-align: center; color: #64748b; padding: 20px;">Belum ada aktivitas terdaftar pada trip ini.</p>';
+    }
+
+    return `
+      <div class="print-header">
+        <div class="print-brand-col">
+          <div class="print-brand-badge">TimelineFlow • Travel & Itinerary Planner</div>
+          <h1 class="print-doc-title">Laporan Rencana Perjalanan & Estimasi Anggaran</h1>
+          <p class="print-doc-subtitle">Trip: <strong>${escapeHtml(trip.title || 'Trip')}</strong> • Periode: ${formatDateIndo(trip.startDate)} s.d. ${formatDateIndo(trip.endDate)}</p>
+        </div>
+        <div class="print-meta-col">
+          <div>Tanggal Laporan: <strong>${dateFormatted}</strong></div>
+          <div>Kategori: <strong>${escapeHtml(trip.category || 'Wisata')}</strong></div>
+        </div>
+      </div>
+
+      <div class="print-kpi-grid">
+        <div class="print-kpi-card">
+          <div class="print-kpi-label">Target Anggaran (Budget)</div>
+          <div class="print-kpi-val" style="color: #0284c7; font-size: 11pt;">${formatRupiah(targetBudget)}</div>
+        </div>
+        <div class="print-kpi-card">
+          <div class="print-kpi-label">Total Estimasi Biaya</div>
+          <div class="print-kpi-val" style="font-size: 11pt;">${formatRupiah(totalExpense)}</div>
+        </div>
+        <div class="print-kpi-card">
+          <div class="print-kpi-label">Status Anggaran</div>
+          <div class="print-kpi-val" style="color: ${diffColor}; font-size: 11pt;">${diffText}</div>
+        </div>
+        <div class="print-kpi-card">
+          <div class="print-kpi-label">Total Aktivitas Agenda</div>
+          <div class="print-kpi-val">${activities.length}</div>
+        </div>
+      </div>
+
+      ${daySections}
+
+      <div class="print-footer">
+        <span>TimelineFlow Desktop App • Laporan Rencana Perjalanan</span>
+        <span>Halaman 1 • Dicetak dari Sistem TimelineFlow</span>
+      </div>
+    `;
   }
 
   // --- User Profile & Role Switcher ---
@@ -3694,6 +4227,11 @@
     if (DOM.closeShareTripModalBtn) DOM.closeShareTripModalBtn.addEventListener('click', closeShareTripModal);
     if (DOM.copyShareTextBtn) DOM.copyShareTextBtn.addEventListener('click', copyShareText);
     if (DOM.printFromShareBtn) DOM.printFromShareBtn.addEventListener('click', printTripItinerary);
+
+    // Print Actions across all views
+    if (DOM.printDailyPlanBtn) DOM.printDailyPlanBtn.addEventListener('click', printDailyPlanReport);
+    if (DOM.printRoadmapBtn) DOM.printRoadmapBtn.addEventListener('click', printRoadmapReport);
+    if (DOM.quickPrintNavBtn) DOM.quickPrintNavBtn.addEventListener('click', printActiveViewReport);
 
     // Dynamic Time Slot update when day select changes in Task Modal
     if (DOM.taskDaySelect) {
