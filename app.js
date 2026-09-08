@@ -3610,21 +3610,31 @@
   }
 
   function generateDailyPlanReportHTML() {
-    const plan = (state.data.plans || []).find(p => p.id === state.data.activePlanId) || (state.data.plans && state.data.plans[0]) || { title: 'Work Routine (Utama)', days: {} };
-    const daysOrder = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+    const plan = (state.data.plans || []).find(p => p.id === state.data.activePlanId) || (state.data.plans && state.data.plans[0]) || { name: 'Work Routine (Utama)', days: {} };
+    const planName = plan.name || plan.title || 'Work Routine (Utama)';
+    const daysConfig = [
+      { key: 'senin', label: 'Senin' },
+      { key: 'selasa', label: 'Selasa' },
+      { key: 'rabu', label: 'Rabu' },
+      { key: 'kamis', label: 'Kamis' },
+      { key: 'jumat', label: 'Jumat' },
+      { key: 'sabtu', label: 'Sabtu' },
+      { key: 'minggu', label: 'Minggu' }
+    ];
     
     let totalTasks = 0;
     let completedTasks = 0;
     let totalItems = 0;
     let totalMinutes = 0;
 
-    daysOrder.forEach(day => {
-      const tasks = (plan.days && plan.days[day]) || [];
+    daysConfig.forEach(d => {
+      const tasks = (plan.days && (plan.days[d.key] || plan.days[d.label] || plan.days[d.key.toLowerCase()])) || [];
       tasks.forEach(t => {
         totalTasks++;
         if (t.completed) completedTasks++;
-        if (t.items && Array.isArray(t.items)) {
-          totalItems += t.items.length;
+        const subItems = t.items || [];
+        if (Array.isArray(subItems)) {
+          totalItems += subItems.length;
         }
         totalMinutes += Math.max(0, timeToMinutes(t.endTime) - timeToMinutes(t.startTime));
       });
@@ -3635,21 +3645,27 @@
     const dateFormatted = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     let daysHtml = '';
-    daysOrder.forEach(day => {
-      const tasks = (plan.days && plan.days[day]) || [];
+    daysConfig.forEach(d => {
+      const tasks = (plan.days && (plan.days[d.key] || plan.days[d.label] || plan.days[d.key.toLowerCase()])) || [];
       if (tasks.length === 0) return;
 
       let taskRows = '';
       tasks.forEach(t => {
-        const statusBadge = t.completed ? '<span class="print-badge" style="color:#10b981; border-color:#10b981;">✓ Selesai</span>' : '<span class="print-badge" style="color:#4f46e5;">• Terjadwal</span>';
+        const isDone = Boolean(t.completed);
+        const statusBadge = isDone 
+          ? '<span class="print-badge print-badge-done">✓ Selesai</span>' 
+          : '<span class="print-badge print-badge-pending">• Terjadwal</span>';
         const priorityBadge = `<span class="print-badge" style="text-transform: capitalize;">${escapeHtml(t.priority || 'Medium')}</span>`;
         
         let subitemsList = '';
-        if (t.items && t.items.length > 0) {
+        const subItems = t.items || [];
+        if (subItems.length > 0) {
           subitemsList = '<ul class="print-subitems-list">';
-          t.items.forEach(item => {
-            const check = item.completed ? '☑' : '☐';
-            subitemsList += `<li>${check} ${escapeHtml(item.title || '')}</li>`;
+          subItems.forEach(item => {
+            const isSubDone = Boolean(item.completed);
+            const check = isSubDone ? '☑' : '☐';
+            const itemText = item.text || item.title || item.name || '';
+            subitemsList += `<li>${check} ${escapeHtml(itemText)}</li>`;
           });
           subitemsList += '</ul>';
         }
@@ -3659,7 +3675,7 @@
             <td style="font-family: monospace; font-weight: 700; width: 110px;">${escapeHtml(t.startTime || '')} - ${escapeHtml(t.endTime || '')}</td>
             <td>
               <strong>${escapeHtml(t.title || '')}</strong>
-              <div style="font-size: 7.5pt; color: #64748b; margin-top: 2px;">Kategori: ${escapeHtml(t.category || 'Work')}</div>
+              <div style="font-size: 7.5pt; color: #64748b; margin-top: 2px;">Kategori: ${escapeHtml(t.category || 'work')}</div>
             </td>
             <td style="width: 85px;">${priorityBadge}</td>
             <td>${subitemsList || '<span style="color:#94a3b8; font-size:8pt;">-</span>'}</td>
@@ -3671,17 +3687,17 @@
       daysHtml += `
         <div class="print-section">
           <div class="print-section-title">
-            <span>📅 ${day}</span>
+            <span>📅 ${d.label}</span>
             <span style="font-size: 8.5pt; font-weight: normal; color: #64748b;">${tasks.length} Agenda Tugas</span>
           </div>
           <table class="print-table">
             <thead>
               <tr>
-                <th>Waktu</th>
+                <th style="width: 110px;">Waktu</th>
                 <th>Aktivitas & Kategori</th>
-                <th>Prioritas</th>
+                <th style="width: 85px;">Prioritas</th>
                 <th>Checklist Sub-Pekerjaan</th>
-                <th style="text-align: center;">Status</th>
+                <th style="width: 85px; text-align: center;">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -3701,7 +3717,7 @@
         <div class="print-brand-col">
           <div class="print-brand-badge">TimelineFlow • Productivity Planner</div>
           <h1 class="print-doc-title">Laporan Rencana Kerja & Jadwal Rutin</h1>
-          <p class="print-doc-subtitle">Plan: <strong>${escapeHtml(plan.title || 'Work Routine')}</strong> — Evaluasi Alokasi Waktu Mingguan</p>
+          <p class="print-doc-subtitle">Plan: <strong>${escapeHtml(planName)}</strong> — Evaluasi Alokasi Waktu Mingguan</p>
         </div>
         <div class="print-meta-col">
           <div>Tanggal Laporan: <strong>${dateFormatted}</strong></div>
@@ -3738,7 +3754,7 @@
   }
 
   function generateRoadmapReportHTML() {
-    const year = state.data.roadmapYear || 2026;
+    const year = state.data.roadmapYear || state.data.currentYear || 2026;
     const roadmap = state.data.roadmap || {};
     const qKeys = ['Q1', 'Q2', 'Q3', 'Q4'];
     
@@ -3761,7 +3777,7 @@
       const meta = QUARTERS_META[k];
       const q = roadmap[k] || {};
       const target = q.targetRupiah || meta.defaultTarget || 0;
-      const period = q.periodLabel || (q.startDate && q.endDate ? `${formatDateIndo(q.startDate)} - ${formatDateIndo(q.endDate)}` : meta.months);
+      const period = q.periodLabel || (q.startDate && (q.finishDate || q.endDate) ? `${formatDateIndo(q.startDate)} - ${formatDateIndo(q.finishDate || q.endDate)}` : meta.months);
       const itemsCount = (q.items || []).length;
       const strategy = q.strategy || '-';
 
@@ -3781,33 +3797,37 @@
       const meta = QUARTERS_META[k];
       const q = roadmap[k] || {};
       const items = q.items || [];
-      const period = q.periodLabel || (q.startDate && q.endDate ? `${formatDateIndo(q.startDate)} - ${formatDateIndo(q.endDate)}` : meta.months);
+      const period = q.periodLabel || (q.startDate && (q.finishDate || q.endDate) ? `${formatDateIndo(q.startDate)} - ${formatDateIndo(q.finishDate || q.endDate)}` : meta.months);
 
       let itemRows = '';
       if (items.length > 0) {
         items.forEach(item => {
           let subitemsHtml = '';
-          if (item.items && item.items.length > 0) {
+          const subItems = item.items || [];
+          if (subItems.length > 0) {
             subitemsHtml = '<ul class="print-subitems-list">';
-            item.items.forEach(sub => {
+            subItems.forEach(sub => {
               const chk = sub.completed ? '☑' : '☐';
-              subitemsHtml += `<li>${chk} ${escapeHtml(sub.title || '')}</li>`;
+              const text = sub.text || sub.title || sub.name || '';
+              subitemsHtml += `<li>${chk} ${escapeHtml(text)}</li>`;
             });
             subitemsHtml += '</ul>';
           }
 
-          const dateRange = (item.startDate && item.endDate) ? `${formatDateIndo(item.startDate)} - ${formatDateIndo(item.endDate)}` : (item.date || '-');
+          const start = item.startDate || '';
+          const finish = item.finishDate || item.endDate || '';
+          const dateRange = (start && finish) ? `${formatDateIndo(start)} - ${formatDateIndo(finish)}` : (item.date || '-');
           const targetRp = item.targetRupiah ? formatRupiah(item.targetRupiah) : '-';
           const progress = Number(item.progress || 0);
           const progBadge = progress >= 100 
-            ? '<span class="print-badge" style="color:#10b981; border-color:#10b981;">100% Selesai</span>'
-            : `<span class="print-badge" style="color:#4f46e5;">${progress}%</span>`;
+            ? '<span class="print-badge print-badge-done">100% Selesai</span>' 
+            : `<span class="print-badge print-badge-pending">${progress}%</span>`;
 
           itemRows += `
             <tr>
               <td>
                 <strong>${escapeHtml(item.title || '')}</strong>
-                ${item.description ? `<div style="font-size:7.5pt; color:#64748b; margin-top:2px;">${escapeHtml(item.description)}</div>` : ''}
+                ${(item.description || item.strategy) ? `<div style="font-size:7.5pt; color:#64748b; margin-top:2px;">${escapeHtml(item.description || item.strategy)}</div>` : ''}
               </td>
               <td><span class="print-badge">${escapeHtml(item.category || 'Strategic')}</span></td>
               <td style="font-size:8pt;">${escapeHtml(dateRange)}</td>
@@ -3908,7 +3928,8 @@
   }
 
   function generateItineraryReportHTML() {
-    const trip = (state.data.trips || []).find(t => t.id === state.data.activeTripId) || (state.data.trips && state.data.trips[0]);
+    const trips = state.data.trips || [];
+    const trip = trips.find(t => t.id === state.data.activeTripId) || trips[0];
     const dateFormatted = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     if (!trip) {
@@ -3922,7 +3943,7 @@
       `;
     }
 
-    const activities = (state.data.activities || []).filter(a => a.tripId === trip.id);
+    const activities = Array.isArray(trip.activities) ? trip.activities : ((state.data.activities || []).filter(a => a.tripId === trip.id));
     let totalExpense = 0;
     activities.forEach(a => { totalExpense += Number(a.cost || 0); });
 
@@ -3933,29 +3954,35 @@
 
     const dayGroups = {};
     activities.forEach(a => {
-      const d = a.day || 'Hari 1';
+      const d = a.dayNumber ? `Hari ${a.dayNumber}` : (a.day || 'Hari 1');
       if (!dayGroups[d]) dayGroups[d] = [];
       dayGroups[d].push(a);
     });
 
     let daySections = '';
-    const sortedDays = Object.keys(dayGroups).sort();
+    const sortedDays = Object.keys(dayGroups).sort((a, b) => {
+      const numA = parseInt(a.replace(/\D/g, ''), 10) || 0;
+      const numB = parseInt(b.replace(/\D/g, ''), 10) || 0;
+      return numA - numB;
+    });
+
     sortedDays.forEach(dayName => {
-      const dayActs = dayGroups[dayName].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+      const dayActs = dayGroups[dayName].sort((a, b) => (a.startTime || a.time || '').localeCompare(b.startTime || b.time || ''));
       let actRows = '';
       let dayTotalCost = 0;
 
       dayActs.forEach(act => {
         dayTotalCost += Number(act.cost || 0);
         const costStr = Number(act.cost) > 0 ? formatRupiah(act.cost) : 'Gratis';
+        const timeRange = (act.startTime && act.endTime) ? `${act.startTime} - ${act.endTime}` : (act.startTime || act.time || '-');
         actRows += `
           <tr>
-            <td style="font-family: monospace; font-weight: 700; width: 85px;">${escapeHtml(act.time || '-')}</td>
+            <td style="font-family: monospace; font-weight: 700; width: 95px;">${escapeHtml(timeRange)}</td>
             <td>
               <strong>${escapeHtml(act.title || '')}</strong>
               ${act.notes ? `<div style="font-size:7.5pt; color:#64748b; margin-top:2px;">${escapeHtml(act.notes)}</div>` : ''}
             </td>
-            <td>${escapeHtml(act.location || '-')}</td>
+            <td>${escapeHtml(act.location || trip.tag || '-')}</td>
             <td><span class="print-badge">${escapeHtml(act.category || 'Wisata')}</span></td>
             <td style="font-family: monospace; font-weight: 600; text-align: right;">${costStr}</td>
           </tr>
@@ -3971,7 +3998,7 @@
           <table class="print-table">
             <thead>
               <tr>
-                <th>Waktu</th>
+                <th style="width: 95px;">Waktu</th>
                 <th>Aktivitas & Keterangan</th>
                 <th>Lokasi Destinasi</th>
                 <th style="width: 85px;">Kategori</th>
@@ -3999,7 +4026,7 @@
         </div>
         <div class="print-meta-col">
           <div>Tanggal Laporan: <strong>${dateFormatted}</strong></div>
-          <div>Kategori: <strong>${escapeHtml(trip.category || 'Wisata')}</strong></div>
+          <div>Kategori: <strong>${escapeHtml(trip.tag || trip.category || 'Wisata')}</strong></div>
         </div>
       </div>
 
@@ -4377,7 +4404,22 @@
       window.electronAPI.onMenuTrigger('menu-new-task', () => openTaskModal(getTodayDayKey()));
       window.electronAPI.onMenuTrigger('menu-export', () => exportData());
       window.electronAPI.onMenuTrigger('menu-import', () => triggerImport());
+      window.electronAPI.onMenuTrigger('trigger-print', () => printActiveViewReport());
     }
+
+    // Window beforeprint guard: ensure print container is ALWAYS populated with full data
+    window.addEventListener('beforeprint', () => {
+      if (DOM.printReportContainer && (!DOM.printReportContainer.innerHTML || DOM.printReportContainer.innerHTML.trim() === '')) {
+        const view = state.data.viewMode || 'daily';
+        if (view === 'roadmap') {
+          DOM.printReportContainer.innerHTML = generateRoadmapReportHTML();
+        } else if (view === 'itinerary') {
+          DOM.printReportContainer.innerHTML = generateItineraryReportHTML();
+        } else {
+          DOM.printReportContainer.innerHTML = generateDailyPlanReportHTML();
+        }
+      }
+    });
 
     // Confirmation dialog actions
     if (DOM.cancelConfirmBtn) DOM.cancelConfirmBtn.addEventListener('click', closeConfirmDialog);

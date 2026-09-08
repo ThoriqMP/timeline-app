@@ -166,7 +166,7 @@ function setupAppMenu() {
           label: '🖨️ Cetak / Print Timeline',
           accelerator: 'CmdOrCtrl+P',
           click: () => {
-            if (mainWindow) mainWindow.webContents.print();
+            if (mainWindow) mainWindow.webContents.send('trigger-print');
           }
         },
         { type: 'separator' },

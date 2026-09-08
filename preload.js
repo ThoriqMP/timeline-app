@@ -1,10 +1,10 @@
 // TimelineFlow Preload Script
 const { contextBridge, ipcRenderer } = require("electron");
 
-let version = "1.4.0";
+let version = "1.4.1";
 try {
   const packageJson = require("./package.json");
-  version = packageJson.version || "1.4.0";
+  version = packageJson.version || "1.4.1";
 } catch (e) {
   // fallback
 }
@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
       "menu-goals",
       "menu-new-task",
       "trigger-check-update",
+      "trigger-print",
       "menu-app-info"
     ];
     if (validChannels.includes(channel)) {
