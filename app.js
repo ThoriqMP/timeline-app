@@ -3915,7 +3915,7 @@
   // ==========================================================================
 
   const updateState = {
-    currentVersion: '1.2.0',
+    currentVersion: '1.3.0',
     availableUpdateInfo: null,
     isDownloading: false
   };
