@@ -3987,6 +3987,9 @@
     }
   }
 
+  let updateCheckTimeout = null;
+  let updateCheckStepInterval = null;
+
   function openUpdateModal(initialState = 'checking') {
     if (DOM.updateModalOverlay) {
       DOM.updateModalOverlay.classList.add('is-active');
@@ -3995,6 +3998,8 @@
   }
 
   function closeUpdateModal() {
+    clearTimeout(updateCheckTimeout);
+    clearInterval(updateCheckStepInterval);
     if (DOM.updateModalOverlay) {
       DOM.updateModalOverlay.classList.remove('is-active');
     }
@@ -4002,11 +4007,43 @@
 
   function triggerCheckForUpdates() {
     openUpdateModal('checking');
+    clearTimeout(updateCheckTimeout);
+    clearInterval(updateCheckStepInterval);
+
+    const descEl = document.querySelector('#updateStateChecking .update-status-desc');
+    if (descEl) descEl.textContent = 'Menghubungkan ke server rilis GitHub...';
+
+    let elapsed = 0;
+    updateCheckStepInterval = setInterval(() => {
+      elapsed += 1;
+      if (descEl) {
+        if (elapsed === 2) {
+          descEl.textContent = 'Membaca metadata rilis terbaru di GitHub...';
+        } else if (elapsed === 4) {
+          descEl.textContent = 'Memverifikasi paket rilis dan catatan fitur baru...';
+        } else if (elapsed === 7) {
+          descEl.textContent = 'Menyelesaikan sinkronisasi server...';
+        }
+      }
+    }, 1000);
+
+    // Timeout safety net (12 seconds)
+    updateCheckTimeout = setTimeout(() => {
+      clearInterval(updateCheckStepInterval);
+      if (DOM.updateStateChecking && DOM.updateStateChecking.style.display !== 'none') {
+        setUpdateModalState('error', {
+          message: 'Koneksi ke GitHub memerlukan waktu lebih lama dari biasanya. Silakan coba kembali beberapa saat lagi.'
+        });
+      }
+    }, 12000);
+
     if (window.electronAPI && typeof window.electronAPI.checkForUpdates === 'function') {
       window.electronAPI.checkForUpdates();
     } else {
       // Fallback if accessed through web browser
       setTimeout(() => {
+        clearInterval(updateCheckStepInterval);
+        clearTimeout(updateCheckTimeout);
         setUpdateModalState('latest', { version: updateState.currentVersion });
       }, 1400);
     }
@@ -4046,6 +4083,9 @@
   }
 
   function setUpdateModalState(stateName, data = {}) {
+    clearInterval(updateCheckStepInterval);
+    clearTimeout(updateCheckTimeout);
+
     const states = [
       DOM.updateStateChecking,
       DOM.updateStateAvailable,
