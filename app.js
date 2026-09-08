@@ -9,7 +9,7 @@
   // Storage Keys
   const STORAGE_KEY = 'timelineflow_data_v3';
   const THEME_KEY = 'timelineflow_theme';
-  
+
   const DAYS_OF_WEEK = [
     { key: 'senin', label: 'Senin', en: 'Monday' },
     { key: 'selasa', label: 'Selasa', en: 'Tuesday' },
@@ -802,14 +802,20 @@
       updateProgressBarFill: document.getElementById('updateProgressBarFill'),
       updateProgressPercentText: document.getElementById('updateProgressPercentText'),
       updateProgressSpeedText: document.getElementById('updateProgressSpeedText'),
+      updateProgressChunkText: document.getElementById('updateProgressChunkText'),
       updateDownloadingNotice: document.getElementById('updateDownloadingNotice'),
       btnLaterInstall: document.getElementById('btnLaterInstall'),
       btnRestartAndInstall: document.getElementById('btnRestartAndInstall'),
       latestVersionBadge: document.getElementById('latestVersionBadge'),
       btnCloseUpdateLatest: document.getElementById('btnCloseUpdateLatest'),
+      updateStatePending: document.getElementById('updateStatePending'),
+      updatePendingDetailText: document.getElementById('updatePendingDetailText'),
+      btnCloseUpdatePending: document.getElementById('btnCloseUpdatePending'),
+      btnRefreshUpdatePending: document.getElementById('btnRefreshUpdatePending'),
       updateErrorDetailText: document.getElementById('updateErrorDetailText'),
       btnRetryUpdateCheck: document.getElementById('btnRetryUpdateCheck'),
-      btnCloseUpdateError: document.getElementById('btnCloseUpdateError')
+      btnCloseUpdateError: document.getElementById('btnCloseUpdateError'),
+      btnOpenBrowserFromError: document.getElementById('btnOpenBrowserFromError')
     };
   }
 
@@ -951,7 +957,7 @@
     const latestEndMins = timeToMinutes(latestTask.endTime);
 
     const nextStartMins = latestEndMins + 5;
-    
+
     let nextEndMins = nextStartMins + 35;
     if (nextEndMins > 1435) {
       nextEndMins = 1439;
@@ -2610,7 +2616,7 @@
     });
 
     if (DOM.tooltipHeader) DOM.tooltipHeader.innerHTML = `<i class="fa-solid fa-bullseye"></i> ${formattedDate}`;
-    
+
     let contentHtml = '';
     goals.forEach(goal => {
       contentHtml += `
@@ -2806,7 +2812,7 @@
       const dateStr = `${yyyy}-${mm}-${dd}`;
       const dayIndex = current.getDay();
       const dayName = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'][dayIndex];
-      
+
       days.push({
         dayNumber: dayNum,
         date: dateStr,
@@ -3610,31 +3616,21 @@
   }
 
   function generateDailyPlanReportHTML() {
-    const plan = (state.data.plans || []).find(p => p.id === state.data.activePlanId) || (state.data.plans && state.data.plans[0]) || { name: 'Work Routine (Utama)', days: {} };
-    const planName = plan.name || plan.title || 'Work Routine (Utama)';
-    const daysConfig = [
-      { key: 'senin', label: 'Senin' },
-      { key: 'selasa', label: 'Selasa' },
-      { key: 'rabu', label: 'Rabu' },
-      { key: 'kamis', label: 'Kamis' },
-      { key: 'jumat', label: 'Jumat' },
-      { key: 'sabtu', label: 'Sabtu' },
-      { key: 'minggu', label: 'Minggu' }
-    ];
-    
+    const plan = (state.data.plans || []).find(p => p.id === state.data.activePlanId) || (state.data.plans && state.data.plans[0]) || { title: 'Work Routine (Utama)', days: {} };
+    const daysOrder = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+
     let totalTasks = 0;
     let completedTasks = 0;
     let totalItems = 0;
     let totalMinutes = 0;
 
-    daysConfig.forEach(d => {
-      const tasks = (plan.days && (plan.days[d.key] || plan.days[d.label] || plan.days[d.key.toLowerCase()])) || [];
+    daysOrder.forEach(day => {
+      const tasks = (plan.days && plan.days[day]) || [];
       tasks.forEach(t => {
         totalTasks++;
         if (t.completed) completedTasks++;
-        const subItems = t.items || [];
-        if (Array.isArray(subItems)) {
-          totalItems += subItems.length;
+        if (t.items && Array.isArray(t.items)) {
+          totalItems += t.items.length;
         }
         totalMinutes += Math.max(0, timeToMinutes(t.endTime) - timeToMinutes(t.startTime));
       });
@@ -3645,27 +3641,21 @@
     const dateFormatted = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     let daysHtml = '';
-    daysConfig.forEach(d => {
-      const tasks = (plan.days && (plan.days[d.key] || plan.days[d.label] || plan.days[d.key.toLowerCase()])) || [];
+    daysOrder.forEach(day => {
+      const tasks = (plan.days && plan.days[day]) || [];
       if (tasks.length === 0) return;
 
       let taskRows = '';
       tasks.forEach(t => {
-        const isDone = Boolean(t.completed);
-        const statusBadge = isDone 
-          ? '<span class="print-badge print-badge-done">✓ Selesai</span>' 
-          : '<span class="print-badge print-badge-pending">• Terjadwal</span>';
+        const statusBadge = t.completed ? '<span class="print-badge" style="color:#10b981; border-color:#10b981;">✓ Selesai</span>' : '<span class="print-badge" style="color:#4f46e5;">• Terjadwal</span>';
         const priorityBadge = `<span class="print-badge" style="text-transform: capitalize;">${escapeHtml(t.priority || 'Medium')}</span>`;
-        
+
         let subitemsList = '';
-        const subItems = t.items || [];
-        if (subItems.length > 0) {
+        if (t.items && t.items.length > 0) {
           subitemsList = '<ul class="print-subitems-list">';
-          subItems.forEach(item => {
-            const isSubDone = Boolean(item.completed);
-            const check = isSubDone ? '☑' : '☐';
-            const itemText = item.text || item.title || item.name || '';
-            subitemsList += `<li>${check} ${escapeHtml(itemText)}</li>`;
+          t.items.forEach(item => {
+            const check = item.completed ? '☑' : '☐';
+            subitemsList += `<li>${check} ${escapeHtml(item.title || '')}</li>`;
           });
           subitemsList += '</ul>';
         }
@@ -3675,7 +3665,7 @@
             <td style="font-family: monospace; font-weight: 700; width: 110px;">${escapeHtml(t.startTime || '')} - ${escapeHtml(t.endTime || '')}</td>
             <td>
               <strong>${escapeHtml(t.title || '')}</strong>
-              <div style="font-size: 7.5pt; color: #64748b; margin-top: 2px;">Kategori: ${escapeHtml(t.category || 'work')}</div>
+              <div style="font-size: 7.5pt; color: #64748b; margin-top: 2px;">Kategori: ${escapeHtml(t.category || 'Work')}</div>
             </td>
             <td style="width: 85px;">${priorityBadge}</td>
             <td>${subitemsList || '<span style="color:#94a3b8; font-size:8pt;">-</span>'}</td>
@@ -3687,17 +3677,17 @@
       daysHtml += `
         <div class="print-section">
           <div class="print-section-title">
-            <span>📅 ${d.label}</span>
+            <span>📅 ${day}</span>
             <span style="font-size: 8.5pt; font-weight: normal; color: #64748b;">${tasks.length} Agenda Tugas</span>
           </div>
           <table class="print-table">
             <thead>
               <tr>
-                <th style="width: 110px;">Waktu</th>
+                <th>Waktu</th>
                 <th>Aktivitas & Kategori</th>
-                <th style="width: 85px;">Prioritas</th>
+                <th>Prioritas</th>
                 <th>Checklist Sub-Pekerjaan</th>
-                <th style="width: 85px; text-align: center;">Status</th>
+                <th style="text-align: center;">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -3717,7 +3707,7 @@
         <div class="print-brand-col">
           <div class="print-brand-badge">TimelineFlow • Productivity Planner</div>
           <h1 class="print-doc-title">Laporan Rencana Kerja & Jadwal Rutin</h1>
-          <p class="print-doc-subtitle">Plan: <strong>${escapeHtml(planName)}</strong> — Evaluasi Alokasi Waktu Mingguan</p>
+          <p class="print-doc-subtitle">Plan: <strong>${escapeHtml(plan.title || 'Work Routine')}</strong> — Evaluasi Alokasi Waktu Mingguan</p>
         </div>
         <div class="print-meta-col">
           <div>Tanggal Laporan: <strong>${dateFormatted}</strong></div>
@@ -3754,10 +3744,10 @@
   }
 
   function generateRoadmapReportHTML() {
-    const year = state.data.roadmapYear || state.data.currentYear || 2026;
+    const year = state.data.roadmapYear || 2026;
     const roadmap = state.data.roadmap || {};
     const qKeys = ['Q1', 'Q2', 'Q3', 'Q4'];
-    
+
     let totalTargetRupiah = 0;
     let totalInitiatives = 0;
     let completedInitiatives = 0;
@@ -3777,7 +3767,7 @@
       const meta = QUARTERS_META[k];
       const q = roadmap[k] || {};
       const target = q.targetRupiah || meta.defaultTarget || 0;
-      const period = q.periodLabel || (q.startDate && (q.finishDate || q.endDate) ? `${formatDateIndo(q.startDate)} - ${formatDateIndo(q.finishDate || q.endDate)}` : meta.months);
+      const period = q.periodLabel || (q.startDate && q.endDate ? `${formatDateIndo(q.startDate)} - ${formatDateIndo(q.endDate)}` : meta.months);
       const itemsCount = (q.items || []).length;
       const strategy = q.strategy || '-';
 
@@ -3797,37 +3787,33 @@
       const meta = QUARTERS_META[k];
       const q = roadmap[k] || {};
       const items = q.items || [];
-      const period = q.periodLabel || (q.startDate && (q.finishDate || q.endDate) ? `${formatDateIndo(q.startDate)} - ${formatDateIndo(q.finishDate || q.endDate)}` : meta.months);
+      const period = q.periodLabel || (q.startDate && q.endDate ? `${formatDateIndo(q.startDate)} - ${formatDateIndo(q.endDate)}` : meta.months);
 
       let itemRows = '';
       if (items.length > 0) {
         items.forEach(item => {
           let subitemsHtml = '';
-          const subItems = item.items || [];
-          if (subItems.length > 0) {
+          if (item.items && item.items.length > 0) {
             subitemsHtml = '<ul class="print-subitems-list">';
-            subItems.forEach(sub => {
+            item.items.forEach(sub => {
               const chk = sub.completed ? '☑' : '☐';
-              const text = sub.text || sub.title || sub.name || '';
-              subitemsHtml += `<li>${chk} ${escapeHtml(text)}</li>`;
+              subitemsHtml += `<li>${chk} ${escapeHtml(sub.title || '')}</li>`;
             });
             subitemsHtml += '</ul>';
           }
 
-          const start = item.startDate || '';
-          const finish = item.finishDate || item.endDate || '';
-          const dateRange = (start && finish) ? `${formatDateIndo(start)} - ${formatDateIndo(finish)}` : (item.date || '-');
+          const dateRange = (item.startDate && item.endDate) ? `${formatDateIndo(item.startDate)} - ${formatDateIndo(item.endDate)}` : (item.date || '-');
           const targetRp = item.targetRupiah ? formatRupiah(item.targetRupiah) : '-';
           const progress = Number(item.progress || 0);
-          const progBadge = progress >= 100 
-            ? '<span class="print-badge print-badge-done">100% Selesai</span>' 
-            : `<span class="print-badge print-badge-pending">${progress}%</span>`;
+          const progBadge = progress >= 100
+            ? '<span class="print-badge" style="color:#10b981; border-color:#10b981;">100% Selesai</span>'
+            : `<span class="print-badge" style="color:#4f46e5;">${progress}%</span>`;
 
           itemRows += `
             <tr>
               <td>
                 <strong>${escapeHtml(item.title || '')}</strong>
-                ${(item.description || item.strategy) ? `<div style="font-size:7.5pt; color:#64748b; margin-top:2px;">${escapeHtml(item.description || item.strategy)}</div>` : ''}
+                ${item.description ? `<div style="font-size:7.5pt; color:#64748b; margin-top:2px;">${escapeHtml(item.description)}</div>` : ''}
               </td>
               <td><span class="print-badge">${escapeHtml(item.category || 'Strategic')}</span></td>
               <td style="font-size:8pt;">${escapeHtml(dateRange)}</td>
@@ -3928,8 +3914,7 @@
   }
 
   function generateItineraryReportHTML() {
-    const trips = state.data.trips || [];
-    const trip = trips.find(t => t.id === state.data.activeTripId) || trips[0];
+    const trip = (state.data.trips || []).find(t => t.id === state.data.activeTripId) || (state.data.trips && state.data.trips[0]);
     const dateFormatted = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
     if (!trip) {
@@ -3943,7 +3928,7 @@
       `;
     }
 
-    const activities = Array.isArray(trip.activities) ? trip.activities : ((state.data.activities || []).filter(a => a.tripId === trip.id));
+    const activities = (state.data.activities || []).filter(a => a.tripId === trip.id);
     let totalExpense = 0;
     activities.forEach(a => { totalExpense += Number(a.cost || 0); });
 
@@ -3954,35 +3939,29 @@
 
     const dayGroups = {};
     activities.forEach(a => {
-      const d = a.dayNumber ? `Hari ${a.dayNumber}` : (a.day || 'Hari 1');
+      const d = a.day || 'Hari 1';
       if (!dayGroups[d]) dayGroups[d] = [];
       dayGroups[d].push(a);
     });
 
     let daySections = '';
-    const sortedDays = Object.keys(dayGroups).sort((a, b) => {
-      const numA = parseInt(a.replace(/\D/g, ''), 10) || 0;
-      const numB = parseInt(b.replace(/\D/g, ''), 10) || 0;
-      return numA - numB;
-    });
-
+    const sortedDays = Object.keys(dayGroups).sort();
     sortedDays.forEach(dayName => {
-      const dayActs = dayGroups[dayName].sort((a, b) => (a.startTime || a.time || '').localeCompare(b.startTime || b.time || ''));
+      const dayActs = dayGroups[dayName].sort((a, b) => (a.time || '').localeCompare(b.time || ''));
       let actRows = '';
       let dayTotalCost = 0;
 
       dayActs.forEach(act => {
         dayTotalCost += Number(act.cost || 0);
         const costStr = Number(act.cost) > 0 ? formatRupiah(act.cost) : 'Gratis';
-        const timeRange = (act.startTime && act.endTime) ? `${act.startTime} - ${act.endTime}` : (act.startTime || act.time || '-');
         actRows += `
           <tr>
-            <td style="font-family: monospace; font-weight: 700; width: 95px;">${escapeHtml(timeRange)}</td>
+            <td style="font-family: monospace; font-weight: 700; width: 85px;">${escapeHtml(act.time || '-')}</td>
             <td>
               <strong>${escapeHtml(act.title || '')}</strong>
               ${act.notes ? `<div style="font-size:7.5pt; color:#64748b; margin-top:2px;">${escapeHtml(act.notes)}</div>` : ''}
             </td>
-            <td>${escapeHtml(act.location || trip.tag || '-')}</td>
+            <td>${escapeHtml(act.location || '-')}</td>
             <td><span class="print-badge">${escapeHtml(act.category || 'Wisata')}</span></td>
             <td style="font-family: monospace; font-weight: 600; text-align: right;">${costStr}</td>
           </tr>
@@ -3998,7 +3977,7 @@
           <table class="print-table">
             <thead>
               <tr>
-                <th style="width: 95px;">Waktu</th>
+                <th>Waktu</th>
                 <th>Aktivitas & Keterangan</th>
                 <th>Lokasi Destinasi</th>
                 <th style="width: 85px;">Kategori</th>
@@ -4026,7 +4005,7 @@
         </div>
         <div class="print-meta-col">
           <div>Tanggal Laporan: <strong>${dateFormatted}</strong></div>
-          <div>Kategori: <strong>${escapeHtml(trip.tag || trip.category || 'Wisata')}</strong></div>
+          <div>Kategori: <strong>${escapeHtml(trip.category || 'Wisata')}</strong></div>
         </div>
       </div>
 
@@ -4160,7 +4139,7 @@
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function(event) {
+    reader.onload = function (event) {
       try {
         const importedData = JSON.parse(event.target.result);
         if (importedData && (importedData.plans || importedData.roadmap)) {
@@ -4212,7 +4191,7 @@
     // Itinerary Dashboard Actions
     if (DOM.createTripBtn) DOM.createTripBtn.addEventListener('click', () => openTripModal());
     if (DOM.tripSearchInput) DOM.tripSearchInput.addEventListener('input', () => renderTripsDashboard());
-    
+
     // Filter Pills
     const filterPills = document.querySelectorAll('#tripFilterGroup .filter-pill');
     filterPills.forEach(pill => {
@@ -4404,22 +4383,7 @@
       window.electronAPI.onMenuTrigger('menu-new-task', () => openTaskModal(getTodayDayKey()));
       window.electronAPI.onMenuTrigger('menu-export', () => exportData());
       window.electronAPI.onMenuTrigger('menu-import', () => triggerImport());
-      window.electronAPI.onMenuTrigger('trigger-print', () => printActiveViewReport());
     }
-
-    // Window beforeprint guard: ensure print container is ALWAYS populated with full data
-    window.addEventListener('beforeprint', () => {
-      if (DOM.printReportContainer && (!DOM.printReportContainer.innerHTML || DOM.printReportContainer.innerHTML.trim() === '')) {
-        const view = state.data.viewMode || 'daily';
-        if (view === 'roadmap') {
-          DOM.printReportContainer.innerHTML = generateRoadmapReportHTML();
-        } else if (view === 'itinerary') {
-          DOM.printReportContainer.innerHTML = generateItineraryReportHTML();
-        } else {
-          DOM.printReportContainer.innerHTML = generateDailyPlanReportHTML();
-        }
-      }
-    });
 
     // Confirmation dialog actions
     if (DOM.cancelConfirmBtn) DOM.cancelConfirmBtn.addEventListener('click', closeConfirmDialog);
@@ -4456,8 +4420,20 @@
     if (DOM.btnLaterInstall) DOM.btnLaterInstall.addEventListener('click', closeUpdateModal);
     if (DOM.btnRestartAndInstall) DOM.btnRestartAndInstall.addEventListener('click', installAndRestart);
     if (DOM.btnCloseUpdateLatest) DOM.btnCloseUpdateLatest.addEventListener('click', closeUpdateModal);
+    if (DOM.btnCloseUpdatePending) DOM.btnCloseUpdatePending.addEventListener('click', closeUpdateModal);
+    if (DOM.btnRefreshUpdatePending) DOM.btnRefreshUpdatePending.addEventListener('click', triggerCheckForUpdates);
     if (DOM.btnRetryUpdateCheck) DOM.btnRetryUpdateCheck.addEventListener('click', triggerCheckForUpdates);
     if (DOM.btnCloseUpdateError) DOM.btnCloseUpdateError.addEventListener('click', closeUpdateModal);
+    if (DOM.btnOpenBrowserFromError) {
+      DOM.btnOpenBrowserFromError.addEventListener('click', () => {
+        const releaseUrl = (updateState.availableUpdateInfo && updateState.availableUpdateInfo.releaseUrl) || 'https://github.com/ThoriqMP/timeline-app/releases/latest';
+        if (window.electronAPI && typeof window.electronAPI.openExternal === 'function') {
+          window.electronAPI.openExternal(releaseUrl);
+        } else {
+          window.open(releaseUrl, '_blank');
+        }
+      });
+    }
 
     // Click outside to close modals
     [
@@ -4592,11 +4568,18 @@
       });
 
       window.electronAPI.onUpdaterEvent('updater-available', (info) => {
+        updateState.isDownloading = false;
         updateState.availableUpdateInfo = info;
         setUpdateModalState('available', info);
       });
 
+      window.electronAPI.onUpdaterEvent('updater-pending', (info) => {
+        updateState.isDownloading = false;
+        setUpdateModalState('pending', info);
+      });
+
       window.electronAPI.onUpdaterEvent('updater-not-available', (info) => {
+        updateState.isDownloading = false;
         setUpdateModalState('latest', info);
       });
 
@@ -4605,13 +4588,20 @@
       });
 
       window.electronAPI.onUpdaterEvent('updater-downloaded', (info) => {
+        updateState.isDownloading = false;
         setUpdateModalState('ready', info);
       });
 
       window.electronAPI.onUpdaterEvent('updater-error', (errMsg) => {
         console.warn('AutoUpdater Electron Error:', errMsg);
-        // Fallback langsung ke GitHub Release API jika autoUpdater menemui kendala local config
-        checkGitHubDirectFallback();
+        if (updateState.isDownloading) {
+          updateState.isDownloading = false;
+          setUpdateModalState('error', {
+            message: errMsg || 'Gagal mengunduh berkas pembaruan. Server rilis mungkin sedang sibuk atau koneksi internet terputus.'
+          });
+        } else {
+          checkGitHubDirectFallback();
+        }
       });
 
       window.electronAPI.onUpdaterEvent('updater-dev-mode', () => {
@@ -4716,8 +4706,8 @@
         throw new Error(`Server rilis GitHub merespon dengan status ${response.status}`);
       }
       const data = await response.json();
-      const latestTag = (data.tag_name || data.name || '1.4.0').replace(/^v/, '').trim();
-      const currentVer = String(updateState.currentVersion || '1.4.0').replace(/^v/, '').trim();
+      const latestTag = (data.tag_name || data.name || '1.4.2').replace(/^v/, '').trim();
+      const currentVer = String(updateState.currentVersion || '1.4.2').replace(/^v/, '').trim();
 
       const defaultNotes = `
 ### Fitur Baru & Peningkatan Versi ${latestTag}:
@@ -4725,8 +4715,8 @@
 - 🎨 **Icon Vector Overhaul**: Seluruh ikon diperbarui ke font vector Font Awesome profesional.
 - 📋 **Drag-and-Drop & Duplicate Support**: Fleksibilitas memindahkan atau menggandakan target harian dan roadmap.
 - 🖨️ **Executive PDF Reporting**: Pencetakan dokumen kalender dan aktivitas berkualitas tinggi.
-- 🔄 **Pusat Pembaruan Otomatis**: Integrasi pembaruan sistem langsung dari repositori GitHub.
-- ⚡ **Optimasi Performa**: Responsivitas sistem lebih cepat dan alokasi memori lebih hemat.
+- ⚡ **Resilient Chunked Downloader**: Pengunduhan paket rilis (~240MB) dengan streaming chunk data yang stabil dan tahan gangguan jaringan.
+- 🛡️ **Anti-Looping Release Verification**: Verifikasi kesiapan berkas rilis di server sebelum pengunduhan dibuka.
       `.trim();
 
       const notes = (data.body && data.body.trim()) ? data.body.trim() : defaultNotes;
@@ -4734,6 +4724,29 @@
       const isNewer = compareSemVer(latestTag, currentVer) > 0;
 
       if (isNewer) {
+        // Verify if required binary asset for this OS is actually uploaded and ready
+        let isAssetReady = false;
+        if (Array.isArray(data.assets) && data.assets.length > 0) {
+          const isMac = (window.electronAPI && window.electronAPI.platform === 'darwin') || /Mac/i.test(navigator.platform);
+          const targetSuffix = isMac ? '-mac.zip' : '.exe';
+          const found = data.assets.find(a => 
+            (a.name.toLowerCase().endsWith(targetSuffix) || (isMac && a.name.toLowerCase().endsWith('.zip'))) &&
+            !a.name.toLowerCase().endsWith('.blockmap') &&
+            a.state === 'uploaded' &&
+            (a.size && a.size > 15 * 1024 * 1024)
+          );
+          if (found) isAssetReady = true;
+        }
+
+        // If the tag exists but the 240MB binary is still uploading (incomplete build)
+        if (!isAssetReady && Array.isArray(data.assets)) {
+          setUpdateModalState('pending', {
+            version: latestTag,
+            message: `Pembaruan versi baru v${latestTag} telah dirilis di GitHub, namun paket instalasi (~240MB) saat ini sedang dalam tahap akhir pengunggahan di server. Harap tunggu 1-2 menit lalu klik Cek Ulang Kesiapan.`
+          });
+          return;
+        }
+
         updateState.availableUpdateInfo = {
           version: latestTag,
           releaseName: data.name || `TimelineFlow v${latestTag}`,
@@ -4753,11 +4766,16 @@
   }
 
   function startDownloadUpdate() {
+    updateState.isDownloading = true;
+    if (DOM.btnStartUpdateDownload) {
+      DOM.btnStartUpdateDownload.disabled = true;
+      DOM.btnStartUpdateDownload.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Menghubungkan...</span>';
+    }
     setUpdateModalState('downloading', { percent: 0 });
     if (window.electronAPI && typeof window.electronAPI.startDownloadUpdate === 'function') {
       window.electronAPI.startDownloadUpdate();
     } else {
-      const releaseUrl = 'https://github.com/ThoriqMP/timeline-app/releases/latest';
+      const releaseUrl = (updateState.availableUpdateInfo && updateState.availableUpdateInfo.releaseUrl) || 'https://github.com/ThoriqMP/timeline-app/releases/latest';
       if (window.electronAPI && typeof window.electronAPI.openExternal === 'function') {
         window.electronAPI.openExternal(releaseUrl);
       } else {
@@ -4787,6 +4805,7 @@
       DOM.updateStateDownloading,
       DOM.updateStateReady,
       DOM.updateStateLatest,
+      DOM.updateStatePending,
       DOM.updateStateError
     ];
 
@@ -4803,15 +4822,28 @@
       if (DOM.updateModalHeading) DOM.updateModalHeading.textContent = 'Pembaruan Tersedia!';
       if (DOM.updateModalSubheading) DOM.updateModalSubheading.textContent = 'Versi baru siap diunduh dan dipasang';
 
-      const newVer = data.version || (updateState.availableUpdateInfo && updateState.availableUpdateInfo.version) || '1.4.0';
+      // Reset download button state
+      if (DOM.btnStartUpdateDownload) {
+        DOM.btnStartUpdateDownload.disabled = false;
+        DOM.btnStartUpdateDownload.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> <span>Unduh & Pasang Sekarang</span>';
+      }
+
+      const newVer = data.version || (updateState.availableUpdateInfo && updateState.availableUpdateInfo.version) || '1.4.2';
       if (DOM.updateCurrentVersionText) DOM.updateCurrentVersionText.textContent = `v${updateState.currentVersion}`;
       if (DOM.updateNewVersionText) DOM.updateNewVersionText.textContent = `v${newVer}`;
 
       renderReleaseNotes(data.releaseNotes || (updateState.availableUpdateInfo && updateState.availableUpdateInfo.releaseNotes));
+    } else if (stateName === 'pending') {
+      if (DOM.updateStatePending) DOM.updateStatePending.style.display = 'flex';
+      if (DOM.updateModalHeading) DOM.updateModalHeading.textContent = 'Rilis Sedang Difinalisasi';
+      if (DOM.updateModalSubheading) DOM.updateModalSubheading.textContent = 'Paket rilis baru terdeteksi di GitHub';
+      if (DOM.updatePendingDetailText && data.message) {
+        DOM.updatePendingDetailText.textContent = data.message;
+      }
     } else if (stateName === 'downloading') {
       if (DOM.updateStateDownloading) DOM.updateStateDownloading.style.display = 'flex';
       if (DOM.updateModalHeading) DOM.updateModalHeading.textContent = 'Mengunduh Pembaruan';
-      if (DOM.updateModalSubheading) DOM.updateModalSubheading.textContent = 'Proses berlangsung di latar belakang...';
+      if (DOM.updateModalSubheading) DOM.updateModalSubheading.textContent = 'Proses streaming chunks (~240MB) berlangsung...';
 
       const percent = Math.round(data.percent || 0);
       if (DOM.updateProgressBarFill) DOM.updateProgressBarFill.style.width = `${percent}%`;
@@ -4825,6 +4857,16 @@
         speedText = `${speedMb} MB/s (${transMb} MB / ${totalMb} MB)`;
       }
       if (DOM.updateProgressSpeedText) DOM.updateProgressSpeedText.textContent = speedText;
+
+      if (DOM.updateProgressChunkText) {
+        if (data.chunkIndex) {
+          DOM.updateProgressChunkText.textContent = `Streaming chunks aktif (Bagian paket #${data.chunkIndex} diterima)`;
+        } else if (data.statusText) {
+          DOM.updateProgressChunkText.textContent = data.statusText;
+        } else {
+          DOM.updateProgressChunkText.textContent = 'Mengunduh paket data via streaming chunks...';
+        }
+      }
     } else if (stateName === 'ready') {
       if (DOM.updateStateReady) DOM.updateStateReady.style.display = 'flex';
       if (DOM.updateModalHeading) DOM.updateModalHeading.textContent = 'Pembaruan Siap Dipasang';
@@ -4837,7 +4879,7 @@
     } else if (stateName === 'error') {
       if (DOM.updateStateError) DOM.updateStateError.style.display = 'flex';
       if (DOM.updateModalHeading) DOM.updateModalHeading.textContent = 'Pemeriksaan Gagal';
-      if (DOM.updateModalSubheading) DOM.updateModalSubheading.textContent = 'Terjadi kendala saat memeriksa pembaruan';
+      if (DOM.updateModalSubheading) DOM.updateModalSubheading.textContent = 'Terjadi kendala saat memproses pembaruan';
       if (DOM.updateErrorDetailText && data.message) {
         DOM.updateErrorDetailText.textContent = data.message;
       }

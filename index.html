@@ -1228,10 +1228,13 @@
             <span class="meta-percent" id="updateProgressPercentText">0%</span>
             <span class="meta-speed" id="updateProgressSpeedText">Memulai...</span>
           </div>
+          <div class="update-progress-chunk" id="updateProgressChunkText" style="font-size: 11.5px; color: var(--text-muted); margin-top: 5px; font-weight: 500;">
+            Menyiapkan koneksi streaming chunks...
+          </div>
 
           <div class="download-bg-hint">
             <i class="fa-solid fa-circle-info"></i>
-            <span>Unduhan berjalan di latar belakang. Anda dapat tetap melanjutkan aktivitas di aplikasi.</span>
+            <span>Unduhan berjalan di latar belakang dalam mode chunks (~240MB). Anda dapat tetap beraktivitas.</span>
           </div>
         </div>
 
@@ -1259,7 +1262,7 @@
           </div>
           <h4 class="update-status-title">Aplikasi Sudah Terkini</h4>
           <p class="update-status-desc">
-            Anda sedang menjalankan versi terbaru TimelineFlow (<strong id="latestVersionBadge">v1.3.0</strong>). Seluruh sistem dan fitur telah optimal.
+            Anda sedang menjalankan versi terbaru TimelineFlow (<strong id="latestVersionBadge">v1.4.2</strong>). Seluruh sistem dan fitur telah optimal.
           </p>
 
           <div class="confirm-actions" style="margin-top: 20px;">
@@ -1267,18 +1270,41 @@
           </div>
         </div>
 
-        <!-- STATE 6: ERROR OR OFFLINE -->
+        <!-- STATE 6: PENDING RELEASE FINALIZATION (Build Still Uploading to Server) -->
+        <div class="update-state-view" id="updateStatePending" style="display: none;">
+          <div class="download-anim-orb" style="border-color: #f59e0b; color: #f59e0b;">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+          </div>
+          <h4 class="update-status-title">Rilis Sedang Difinalisasi</h4>
+          <p class="update-status-desc" id="updatePendingDetailText">
+            Pembaruan versi baru terdeteksi di GitHub, namun berkas rilis (~240MB) saat ini sedang dalam proses finalisasi pengunggahan di server. Harap tunggu 1-2 menit hingga proses selesai.
+          </p>
+
+          <div class="confirm-actions" style="margin-top: 20px;">
+            <button type="button" class="btn-cancel" id="btnCloseUpdatePending">Tutup</button>
+            <button type="button" class="btn-primary" id="btnRefreshUpdatePending">
+              <i class="fa-solid fa-rotate"></i>
+              <span>Cek Ulang Kesiapan</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- STATE 7: ERROR OR OFFLINE -->
         <div class="update-state-view" id="updateStateError" style="display: none;">
           <div class="error-status-orb">
             <i class="fa-solid fa-triangle-exclamation"></i>
           </div>
-          <h4 class="update-status-title">Gagal Memeriksa Pembaruan</h4>
+          <h4 class="update-status-title">Gagal Memproses Pembaruan</h4>
           <p class="update-status-desc" id="updateErrorDetailText">
             Tidak dapat terhubung ke server rilis GitHub. Pastikan koneksi internet Anda aktif lalu coba beberapa saat lagi.
           </p>
 
-          <div class="confirm-actions" style="margin-top: 20px;">
+          <div class="confirm-actions" style="margin-top: 20px; display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
             <button type="button" class="btn-cancel" id="btnCloseUpdateError">Tutup</button>
+            <button type="button" class="btn-cancel" id="btnOpenBrowserFromError" style="display: inline-flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-arrow-up-right-from-square"></i>
+              <span>Unduh via Browser</span>
+            </button>
             <button type="button" class="btn-primary" id="btnRetryUpdateCheck">
               <i class="fa-solid fa-rotate-right"></i>
               <span>Coba Lagi</span>
