@@ -519,6 +519,7 @@
     cacheDOMElements();
     loadData();
     initTheme();
+    initUpdateSystem();
     setupEventListeners();
     renderAll();
   }
@@ -758,7 +759,38 @@
       calendarTooltip: document.getElementById('calendarTooltip'),
       tooltipHeader: document.getElementById('tooltipHeader'),
       tooltipBody: document.getElementById('tooltipBody'),
-      toastContainer: document.getElementById('toastContainer')
+      toastContainer: document.getElementById('toastContainer'),
+
+      // System Update Modal
+      checkUpdateNavBtn: document.getElementById('checkUpdateNavBtn'),
+      profileCheckUpdateBtn: document.getElementById('profileCheckUpdateBtn'),
+      profileAppVersionText: document.getElementById('profileAppVersionText'),
+      updateModalOverlay: document.getElementById('updateModalOverlay'),
+      closeUpdateModalTopBtn: document.getElementById('closeUpdateModalTopBtn'),
+      updateModalHeading: document.getElementById('updateModalHeading'),
+      updateModalSubheading: document.getElementById('updateModalSubheading'),
+      updateStateChecking: document.getElementById('updateStateChecking'),
+      updateStateAvailable: document.getElementById('updateStateAvailable'),
+      updateStateDownloading: document.getElementById('updateStateDownloading'),
+      updateStateReady: document.getElementById('updateStateReady'),
+      updateStateLatest: document.getElementById('updateStateLatest'),
+      updateStateError: document.getElementById('updateStateError'),
+      updateCurrentVersionText: document.getElementById('updateCurrentVersionText'),
+      updateNewVersionText: document.getElementById('updateNewVersionText'),
+      updateReleaseNotesList: document.getElementById('updateReleaseNotesList'),
+      btnCancelUpdateAvailable: document.getElementById('btnCancelUpdateAvailable'),
+      btnStartUpdateDownload: document.getElementById('btnStartUpdateDownload'),
+      updateProgressBarFill: document.getElementById('updateProgressBarFill'),
+      updateProgressPercentText: document.getElementById('updateProgressPercentText'),
+      updateProgressSpeedText: document.getElementById('updateProgressSpeedText'),
+      updateDownloadingNotice: document.getElementById('updateDownloadingNotice'),
+      btnLaterInstall: document.getElementById('btnLaterInstall'),
+      btnRestartAndInstall: document.getElementById('btnRestartAndInstall'),
+      latestVersionBadge: document.getElementById('latestVersionBadge'),
+      btnCloseUpdateLatest: document.getElementById('btnCloseUpdateLatest'),
+      updateErrorDetailText: document.getElementById('updateErrorDetailText'),
+      btnRetryUpdateCheck: document.getElementById('btnRetryUpdateCheck'),
+      btnCloseUpdateError: document.getElementById('btnCloseUpdateError')
     };
   }
 
@@ -3813,6 +3845,18 @@
     if (DOM.dragDuplicateBtn) DOM.dragDuplicateBtn.addEventListener('click', executeDragDuplicate);
     if (DOM.cancelDragActionBtn) DOM.cancelDragActionBtn.addEventListener('click', closeDragActionModal);
 
+    // Update Modal Actions
+    if (DOM.checkUpdateNavBtn) DOM.checkUpdateNavBtn.addEventListener('click', triggerCheckForUpdates);
+    if (DOM.profileCheckUpdateBtn) DOM.profileCheckUpdateBtn.addEventListener('click', triggerCheckForUpdates);
+    if (DOM.closeUpdateModalTopBtn) DOM.closeUpdateModalTopBtn.addEventListener('click', closeUpdateModal);
+    if (DOM.btnCancelUpdateAvailable) DOM.btnCancelUpdateAvailable.addEventListener('click', closeUpdateModal);
+    if (DOM.btnStartUpdateDownload) DOM.btnStartUpdateDownload.addEventListener('click', startDownloadUpdate);
+    if (DOM.btnLaterInstall) DOM.btnLaterInstall.addEventListener('click', closeUpdateModal);
+    if (DOM.btnRestartAndInstall) DOM.btnRestartAndInstall.addEventListener('click', installAndRestart);
+    if (DOM.btnCloseUpdateLatest) DOM.btnCloseUpdateLatest.addEventListener('click', closeUpdateModal);
+    if (DOM.btnRetryUpdateCheck) DOM.btnRetryUpdateCheck.addEventListener('click', triggerCheckForUpdates);
+    if (DOM.btnCloseUpdateError) DOM.btnCloseUpdateError.addEventListener('click', closeUpdateModal);
+
     // Click outside to close modals
     [
       DOM.taskModalOverlay,
@@ -3825,7 +3869,8 @@
       DOM.tripModalOverlay,
       DOM.activityModalOverlay,
       DOM.shareTripModalOverlay,
-      DOM.userProfileModalOverlay
+      DOM.userProfileModalOverlay,
+      DOM.updateModalOverlay
     ].forEach(overlay => {
       if (overlay) {
         overlay.addEventListener('click', (e) => {
@@ -3853,13 +3898,253 @@
           DOM.tripModalOverlay,
           DOM.activityModalOverlay,
           DOM.shareTripModalOverlay,
-          DOM.userProfileModalOverlay
+          DOM.userProfileModalOverlay,
+          DOM.updateModalOverlay
         ].forEach(ov => {
           if (ov && ov.classList.contains('is-active')) {
             ov.classList.remove('is-active');
           }
         });
         hidePopover();
+      }
+    });
+  }
+
+  // ==========================================================================
+  // SYSTEM UPDATE CHECKER, RELEASE NOTES & CONFIRMATION ENGINE
+  // ==========================================================================
+
+  const updateState = {
+    currentVersion: '1.2.0',
+    availableUpdateInfo: null,
+    isDownloading: false
+  };
+
+  function initUpdateSystem() {
+    if (window.electronAPI && window.electronAPI.appVersion) {
+      updateState.currentVersion = window.electronAPI.appVersion;
+    }
+    if (DOM.profileAppVersionText) {
+      DOM.profileAppVersionText.textContent = `v${updateState.currentVersion}`;
+    }
+    if (DOM.updateCurrentVersionText) {
+      DOM.updateCurrentVersionText.textContent = `v${updateState.currentVersion}`;
+    }
+    if (DOM.latestVersionBadge) {
+      DOM.latestVersionBadge.textContent = `v${updateState.currentVersion}`;
+    }
+
+    // Listen to native menu trigger
+    if (window.electronAPI && typeof window.electronAPI.onMenuTrigger === 'function') {
+      window.electronAPI.onMenuTrigger('trigger-check-update', () => {
+        triggerCheckForUpdates();
+      });
+    }
+
+    // Listen to updater IPC events from Electron
+    if (window.electronAPI && typeof window.electronAPI.onUpdaterEvent === 'function') {
+      window.electronAPI.onUpdaterEvent('updater-checking', () => {
+        setUpdateModalState('checking');
+      });
+
+      window.electronAPI.onUpdaterEvent('updater-available', (info) => {
+        updateState.availableUpdateInfo = info;
+        setUpdateModalState('available', info);
+      });
+
+      window.electronAPI.onUpdaterEvent('updater-not-available', (info) => {
+        setUpdateModalState('latest', info);
+      });
+
+      window.electronAPI.onUpdaterEvent('updater-progress', (progressObj) => {
+        setUpdateModalState('downloading', progressObj);
+      });
+
+      window.electronAPI.onUpdaterEvent('updater-downloaded', (info) => {
+        setUpdateModalState('ready', info);
+      });
+
+      window.electronAPI.onUpdaterEvent('updater-error', (errMsg) => {
+        setUpdateModalState('error', { message: errMsg });
+      });
+
+      window.electronAPI.onUpdaterEvent('updater-dev-mode', () => {
+        // In dev mode, show an interactive showcase of what's new & confirmation
+        updateState.availableUpdateInfo = {
+          version: '1.3.0',
+          releaseName: 'TimelineFlow v1.3.0 Update',
+          releaseNotes: `
+### Fitur Baru & Peningkatan:
+- 🚀 **Double-Layer Navigation**: Tampilan navigasi dua tingkat yang rapi, modern, dan ergonomis.
+- 🎨 **Icon Vector Overhaul**: Menghilangkan seluruh AI emoji slop dan menggantinya dengan Font Awesome profesional.
+- 📋 **Drag-and-Drop & Duplicate Support**: Bebas memilih antara memindahkan atau menyalin tugas harian dan inisiatif roadmap tahunan.
+- 🔄 **Pusat Pembaruan Beranimasi**: Pemindai radar otomatis dengan konfirmasi unduhan dan rincian fitur baru.
+- ⚡ **Optimasi Performa**: Respons UI lebih cepat dan alokasi memori lebih hemat.
+          `.trim()
+        };
+        setUpdateModalState('available', updateState.availableUpdateInfo);
+      });
+    }
+  }
+
+  function openUpdateModal(initialState = 'checking') {
+    if (DOM.updateModalOverlay) {
+      DOM.updateModalOverlay.classList.add('is-active');
+    }
+    setUpdateModalState(initialState);
+  }
+
+  function closeUpdateModal() {
+    if (DOM.updateModalOverlay) {
+      DOM.updateModalOverlay.classList.remove('is-active');
+    }
+  }
+
+  function triggerCheckForUpdates() {
+    openUpdateModal('checking');
+    if (window.electronAPI && typeof window.electronAPI.checkForUpdates === 'function') {
+      window.electronAPI.checkForUpdates();
+    } else {
+      // Fallback if accessed through web browser
+      setTimeout(() => {
+        setUpdateModalState('latest', { version: updateState.currentVersion });
+      }, 1400);
+    }
+  }
+
+  function startDownloadUpdate() {
+    setUpdateModalState('downloading', { percent: 0 });
+    if (window.electronAPI && typeof window.electronAPI.startDownloadUpdate === 'function') {
+      window.electronAPI.startDownloadUpdate();
+    } else {
+      // Browser simulation
+      let p = 0;
+      const t = setInterval(() => {
+        p += 20;
+        if (p >= 100) {
+          clearInterval(t);
+          setUpdateModalState('ready');
+        } else {
+          setUpdateModalState('downloading', {
+            percent: p,
+            bytesPerSecond: 2800000,
+            transferred: (p / 100) * 85000000,
+            total: 85000000
+          });
+        }
+      }, 350);
+    }
+  }
+
+  function installAndRestart() {
+    if (window.electronAPI && typeof window.electronAPI.installUpdate === 'function') {
+      window.electronAPI.installUpdate();
+    } else {
+      showToast('Aplikasi akan memuat ulang');
+      setTimeout(() => window.location.reload(), 800);
+    }
+  }
+
+  function setUpdateModalState(stateName, data = {}) {
+    const states = [
+      DOM.updateStateChecking,
+      DOM.updateStateAvailable,
+      DOM.updateStateDownloading,
+      DOM.updateStateReady,
+      DOM.updateStateLatest,
+      DOM.updateStateError
+    ];
+
+    states.forEach(el => {
+      if (el) el.style.display = 'none';
+    });
+
+    if (stateName === 'checking') {
+      if (DOM.updateStateChecking) DOM.updateStateChecking.style.display = 'flex';
+      if (DOM.updateModalHeading) DOM.updateModalHeading.textContent = 'Memeriksa Pembaruan';
+      if (DOM.updateModalSubheading) DOM.updateModalSubheading.textContent = 'Menghubungkan ke server pembaruan...';
+    } else if (stateName === 'available') {
+      if (DOM.updateStateAvailable) DOM.updateStateAvailable.style.display = 'flex';
+      if (DOM.updateModalHeading) DOM.updateModalHeading.textContent = 'Pembaruan Tersedia!';
+      if (DOM.updateModalSubheading) DOM.updateModalSubheading.textContent = 'Versi baru siap diunduh dan dipasang';
+
+      const newVer = data.version || (updateState.availableUpdateInfo && updateState.availableUpdateInfo.version) || '1.3.0';
+      if (DOM.updateCurrentVersionText) DOM.updateCurrentVersionText.textContent = `v${updateState.currentVersion}`;
+      if (DOM.updateNewVersionText) DOM.updateNewVersionText.textContent = `v${newVer}`;
+
+      renderReleaseNotes(data.releaseNotes || (updateState.availableUpdateInfo && updateState.availableUpdateInfo.releaseNotes));
+    } else if (stateName === 'downloading') {
+      if (DOM.updateStateDownloading) DOM.updateStateDownloading.style.display = 'flex';
+      if (DOM.updateModalHeading) DOM.updateModalHeading.textContent = 'Mengunduh Pembaruan';
+      if (DOM.updateModalSubheading) DOM.updateModalSubheading.textContent = 'Proses berlangsung di latar belakang...';
+
+      const percent = Math.round(data.percent || 0);
+      if (DOM.updateProgressBarFill) DOM.updateProgressBarFill.style.width = `${percent}%`;
+      if (DOM.updateProgressPercentText) DOM.updateProgressPercentText.textContent = `${percent}%`;
+
+      let speedText = 'Mengunduh...';
+      if (data.bytesPerSecond) {
+        const speedMb = (data.bytesPerSecond / (1024 * 1024)).toFixed(1);
+        const transMb = ((data.transferred || 0) / (1024 * 1024)).toFixed(1);
+        const totalMb = ((data.total || 0) / (1024 * 1024)).toFixed(1);
+        speedText = `${speedMb} MB/s (${transMb} MB / ${totalMb} MB)`;
+      }
+      if (DOM.updateProgressSpeedText) DOM.updateProgressSpeedText.textContent = speedText;
+    } else if (stateName === 'ready') {
+      if (DOM.updateStateReady) DOM.updateStateReady.style.display = 'flex';
+      if (DOM.updateModalHeading) DOM.updateModalHeading.textContent = 'Pembaruan Siap Dipasang';
+      if (DOM.updateModalSubheading) DOM.updateModalSubheading.textContent = 'Instalasi paket pembaruan selesai';
+    } else if (stateName === 'latest') {
+      if (DOM.updateStateLatest) DOM.updateStateLatest.style.display = 'flex';
+      if (DOM.updateModalHeading) DOM.updateModalHeading.textContent = 'Aplikasi Terkini';
+      if (DOM.updateModalSubheading) DOM.updateModalSubheading.textContent = 'TimelineFlow sudah dalam versi terbaru';
+      if (DOM.latestVersionBadge) DOM.latestVersionBadge.textContent = `v${updateState.currentVersion}`;
+    } else if (stateName === 'error') {
+      if (DOM.updateStateError) DOM.updateStateError.style.display = 'flex';
+      if (DOM.updateModalHeading) DOM.updateModalHeading.textContent = 'Pemeriksaan Gagal';
+      if (DOM.updateModalSubheading) DOM.updateModalSubheading.textContent = 'Terjadi kendala saat memeriksa pembaruan';
+      if (DOM.updateErrorDetailText && data.message) {
+        DOM.updateErrorDetailText.textContent = data.message;
+      }
+    }
+  }
+
+  function renderReleaseNotes(notes) {
+    if (!DOM.updateReleaseNotesList) return;
+    DOM.updateReleaseNotesList.innerHTML = '';
+
+    if (!notes) {
+      notes = `
+- Double-Layer Navigation: Tampilan navigasi dua tingkat yang rapi, modern, dan ergonomis.
+- Icon Vector Overhaul: Seluruh emoji diganti dengan vector icons Font Awesome profesional.
+- Drag-and-Drop & Duplikat: Opsi memindahkan atau menyalin tugas harian dan inisiatif roadmap tahunan.
+- Peningkatan Stabilitas: Optimasi kinerja dan responsivitas aplikasi.
+      `.trim();
+    }
+
+    const lines = typeof notes === 'string' ? notes.split('\n') : Array.isArray(notes) ? notes : [String(notes)];
+
+    lines.forEach(line => {
+      const trimmed = line.trim();
+      if (!trimmed) return;
+
+      if (trimmed.startsWith('###') || trimmed.startsWith('##') || trimmed.startsWith('#')) {
+        const h = document.createElement('div');
+        h.style.fontWeight = '700';
+        h.style.color = 'var(--text-main)';
+        h.style.margin = '8px 0 4px';
+        h.textContent = trimmed.replace(/^#+\s*/, '');
+        DOM.updateReleaseNotesList.appendChild(h);
+      } else {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'update-feature-item';
+
+        const cleanText = trimmed.replace(/^[-*•]\s*/, '');
+        itemEl.innerHTML = `
+          <i class="fa-solid fa-circle-check"></i>
+          <span>${cleanText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</span>
+        `;
+        DOM.updateReleaseNotesList.appendChild(itemEl);
       }
     });
   }

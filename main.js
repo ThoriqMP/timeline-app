@@ -4,54 +4,49 @@ const { autoUpdater } = require('electron-updater');
 
 let mainWindow;
 
-// Configure Auto-Updater
-autoUpdater.autoDownload = true;
-autoUpdater.autoInstallOnAppQuit = true;
+// Configure Auto-Updater (Require user confirmation before download)
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = false;
 
 function setupAutoUpdater() {
   autoUpdater.on('checking-for-update', () => {
     console.log('Memeriksa pembaruan...');
+    if (mainWindow) {
+      mainWindow.webContents.send('updater-checking');
+    }
   });
 
   autoUpdater.on('update-available', (info) => {
     console.log(`Pembaruan versi ${info.version} tersedia.`);
     if (mainWindow) {
-      mainWindow.webContents.send('update-available', info);
+      mainWindow.webContents.send('updater-available', info);
     }
   });
 
   autoUpdater.on('update-not-available', (info) => {
     console.log('Aplikasi sudah dalam versi terbaru.');
     if (mainWindow) {
-      mainWindow.webContents.send('update-not-available', info);
+      mainWindow.webContents.send('updater-not-available', info);
     }
   });
 
   autoUpdater.on('error', (err) => {
     console.error('Error saat auto-updater:', err);
+    if (mainWindow) {
+      mainWindow.webContents.send('updater-error', err ? err.message : 'Gagal memeriksa pembaruan.');
+    }
   });
 
   autoUpdater.on('download-progress', (progressObj) => {
     if (mainWindow) {
-      mainWindow.webContents.send('update-download-progress', progressObj);
+      mainWindow.webContents.send('updater-progress', progressObj);
     }
   });
 
   autoUpdater.on('update-downloaded', (info) => {
+    console.log(`Pembaruan versi ${info.version} siap dipasang.`);
     if (mainWindow) {
-      dialog.showMessageBox(mainWindow, {
-        type: 'info',
-        title: 'Pembaruan Siap Dipasang',
-        message: `Versi baru (${info.version}) telah selesai diunduh!`,
-        detail: 'Restart aplikasi sekarang untuk menerapkan pembaruan?',
-        buttons: ['Restart Sekarang', 'Nanti'],
-        defaultId: 0,
-        cancelId: 1
-      }).then(({ response }) => {
-        if (response === 0) {
-          autoUpdater.quitAndInstall();
-        }
-      });
+      mainWindow.webContents.send('updater-downloaded', info);
     }
   });
 }
@@ -208,23 +203,10 @@ function setupAppMenu() {
       label: 'Bantuan',
       submenu: [
         {
-          label: '🔄 Periksa Pembaruan...',
+          label: 'Periksa Pembaruan...',
           click: () => {
-            if (app.isPackaged) {
-              autoUpdater.checkForUpdates();
-              dialog.showMessageBox(mainWindow, {
-                type: 'info',
-                title: 'Pembaruan',
-                message: 'Memeriksa Pembaruan...',
-                detail: 'Sistem sedang memeriksa versi rilis terbaru di server GitHub.'
-              });
-            } else {
-              dialog.showMessageBox(mainWindow, {
-                type: 'info',
-                title: 'Periksa Pembaruan',
-                message: 'Mode Pengembang (Development)',
-                detail: 'Auto-update aktif otomatis pada versi aplikasi yang telah diinstall / dibuild.'
-              });
+            if (mainWindow) {
+              mainWindow.webContents.send('trigger-check-update');
             }
           }
         },
@@ -251,7 +233,60 @@ ipcMain.on('window-print', () => {
 // IPC listener for checking updates
 ipcMain.on('check-update', () => {
   if (app.isPackaged) {
-    autoUpdater.checkForUpdates();
+    autoUpdater.checkForUpdates().catch(err => {
+      if (mainWindow) mainWindow.webContents.send('updater-error', err ? err.message : 'Gagal memeriksa pembaruan.');
+    });
+  } else {
+    // In dev mode, simulate checking process
+    if (mainWindow) {
+      mainWindow.webContents.send('updater-checking');
+      setTimeout(() => {
+        mainWindow.webContents.send('updater-dev-mode', {
+          currentVersion: app.getVersion(),
+          message: 'Aplikasi berjalan dalam mode pengembang (Development).'
+        });
+      }, 1200);
+    }
+  }
+});
+
+// IPC listener to start downloading update after user confirmation
+ipcMain.on('start-download-update', () => {
+  if (app.isPackaged) {
+    autoUpdater.downloadUpdate().catch(err => {
+      if (mainWindow) mainWindow.webContents.send('updater-error', err ? err.message : 'Gagal mengunduh pembaruan.');
+    });
+  } else {
+    // Dev mode simulation for testing download progress and install UI
+    if (mainWindow) {
+      let percent = 0;
+      const interval = setInterval(() => {
+        percent += 20;
+        if (percent >= 100) {
+          clearInterval(interval);
+          mainWindow.webContents.send('updater-downloaded', {
+            version: '1.3.0 (Demo Development)'
+          });
+        } else {
+          mainWindow.webContents.send('updater-progress', {
+            percent: Math.min(percent, 99),
+            bytesPerSecond: 1024 * 1024 * 2.8,
+            transferred: (percent / 100) * 85 * 1024 * 1024,
+            total: 85 * 1024 * 1024
+          });
+        }
+      }, 350);
+    }
+  }
+});
+
+// IPC listener to install and restart
+ipcMain.on('install-update', () => {
+  if (app.isPackaged) {
+    autoUpdater.quitAndInstall();
+  } else {
+    app.relaunch();
+    app.quit();
   }
 });
 
@@ -261,10 +296,10 @@ app.whenReady().then(() => {
 
   if (app.isPackaged) {
     setTimeout(() => {
-      autoUpdater.checkForUpdatesAndNotify().catch(err => {
+      autoUpdater.checkForUpdates().catch(err => {
         console.error('Gagal memeriksa pembaruan otomatis:', err);
       });
-    }, 4000);
+    }, 5000);
   }
 
   app.on('activate', () => {

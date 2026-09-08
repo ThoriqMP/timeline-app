@@ -101,6 +101,9 @@
 
           <!-- Unified Tool Dock -->
           <div class="nav-action-toolbar">
+            <button id="checkUpdateNavBtn" class="nav-tool-btn" title="Periksa Pembaruan Sistem">
+              <i class="fa-solid fa-arrows-rotate"></i>
+            </button>
             <button id="exportDataBtn" class="nav-tool-btn" title="Backup / Ekspor Data (JSON)">
               <i class="fa-solid fa-file-arrow-down"></i>
             </button>
@@ -1085,8 +1088,13 @@
             <span class="p-stat-badge"><i class="fa-solid fa-circle-check" style="color:var(--priority-low); margin-right:4px;"></i> Aktif (Lokal Terenkripsi)</span>
           </div>
           <div class="p-stat-row">
-            <span>Respon Sistem:</span>
-            <span class="p-stat-badge"><i class="fa-solid fa-bolt" style="color:#f59e0b; margin-right:4px;"></i> &lt; 100ms (Instan)</span>
+            <span>Versi Aplikasi:</span>
+            <span class="p-stat-badge font-mono" id="profileAppVersionText">v1.2.0</span>
+          </div>
+          <div class="p-stat-row" style="margin-top: 6px;">
+            <button type="button" class="btn-check-update-profile" id="profileCheckUpdateBtn">
+              <i class="fa-solid fa-arrows-rotate"></i> Periksa Pembaruan
+            </button>
           </div>
         </div>
 
@@ -1108,6 +1116,155 @@
           <button type="submit" class="btn-primary" id="saveUserProfileBtn">Simpan Profil</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- ================= 9. SYSTEM UPDATE CHECKER & CONFIRMATION MODAL ================= -->
+  <div class="modal-backdrop modal-backdrop-confirm" id="updateModalOverlay">
+    <div class="modal-box modal-box-update">
+      <div class="modal-box-header">
+        <div class="modal-icon-title">
+          <div class="modal-icon-badge modal-icon-update"><i class="fa-solid fa-arrows-rotate"></i></div>
+          <div>
+            <h3 id="updateModalHeading">Pembaruan Sistem</h3>
+            <p class="modal-desc" id="updateModalSubheading">Pusat pembaruan otomatis TimelineFlow</p>
+          </div>
+        </div>
+        <button class="modal-btn-close" id="closeUpdateModalTopBtn">&times;</button>
+      </div>
+
+      <div class="update-modal-body">
+        <!-- STATE 1: CHECKING (Animated Radar / Orbit Scanner) -->
+        <div class="update-state-view" id="updateStateChecking">
+          <div class="radar-scan-wrapper">
+            <div class="radar-ring ring-1"></div>
+            <div class="radar-ring ring-2"></div>
+            <div class="radar-ring ring-3"></div>
+            <div class="radar-sweep"></div>
+            <div class="radar-center-orb">
+              <i class="fa-solid fa-cloud-arrow-down"></i>
+            </div>
+          </div>
+          <h4 class="update-status-title">Memeriksa Pembaruan...</h4>
+          <p class="update-status-desc">Menghubungkan ke server rilis GitHub untuk mendeteksi versi terbaru.</p>
+          <div class="checking-dots-loader">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <!-- STATE 2: UPDATE AVAILABLE (Confirmation & Release Notes) -->
+        <div class="update-state-view" id="updateStateAvailable" style="display: none;">
+          <div class="update-version-banner">
+            <div class="version-pill version-current">
+              <span class="v-label">Versi Saat Ini</span>
+              <strong id="updateCurrentVersionText">v1.2.0</strong>
+            </div>
+            <div class="version-arrow-wrap">
+              <i class="fa-solid fa-arrow-right-long"></i>
+            </div>
+            <div class="version-pill version-new">
+              <span class="v-label">Versi Baru</span>
+              <strong id="updateNewVersionText">v1.3.0</strong>
+            </div>
+          </div>
+
+          <div class="update-notes-card">
+            <div class="notes-card-header">
+              <i class="fa-solid fa-sparkles"></i>
+              <span>Apa yang Baru di Versi Ini:</span>
+            </div>
+            <div class="notes-card-content" id="updateReleaseNotesList">
+              <!-- Dynamically populated release notes -->
+            </div>
+          </div>
+
+          <p class="update-confirm-prompt">
+            Apakah Anda ingin mengunduh dan memasang pembaruan ini sekarang?
+          </p>
+
+          <div class="confirm-actions" style="margin-top: 18px;">
+            <button type="button" class="btn-cancel" id="btnCancelUpdateAvailable">Nanti Saja</button>
+            <button type="button" class="btn-primary btn-gradient-update" id="btnStartUpdateDownload">
+              <i class="fa-solid fa-cloud-arrow-down"></i>
+              <span>Unduh & Pasang Sekarang</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- STATE 3: DOWNLOADING (Live Progress Bar & Speed) -->
+        <div class="update-state-view" id="updateStateDownloading" style="display: none;">
+          <div class="download-anim-orb">
+            <i class="fa-solid fa-arrow-down-long download-bounce-icon"></i>
+          </div>
+          <h4 class="update-status-title">Mengunduh Pembaruan...</h4>
+          <p class="update-status-desc" id="updateDownloadingNotice">Mengunduh paket rilis terbaru dari server...</p>
+
+          <div class="update-progress-track">
+            <div class="update-progress-fill" id="updateProgressBarFill" style="width: 0%;"></div>
+          </div>
+
+          <div class="update-progress-meta">
+            <span class="meta-percent" id="updateProgressPercentText">0%</span>
+            <span class="meta-speed" id="updateProgressSpeedText">Memulai...</span>
+          </div>
+
+          <div class="download-bg-hint">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>Unduhan berjalan di latar belakang. Anda dapat tetap melanjutkan aktivitas di aplikasi.</span>
+          </div>
+        </div>
+
+        <!-- STATE 4: DOWNLOADED & READY TO INSTALL -->
+        <div class="update-state-view" id="updateStateReady" style="display: none;">
+          <div class="success-status-orb">
+            <i class="fa-solid fa-circle-check"></i>
+          </div>
+          <h4 class="update-status-title">Pembaruan Siap Dipasang!</h4>
+          <p class="update-status-desc">Paket versi baru telah berhasil diunduh dan siap diterapkan ke sistem.</p>
+
+          <div class="confirm-actions" style="margin-top: 22px;">
+            <button type="button" class="btn-cancel" id="btnLaterInstall">Pasang Saat Ditutup</button>
+            <button type="button" class="btn-primary" id="btnRestartAndInstall">
+              <i class="fa-solid fa-power-off"></i>
+              <span>Restart & Terapkan Sekarang</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- STATE 5: UP TO DATE (Latest Version) -->
+        <div class="update-state-view" id="updateStateLatest" style="display: none;">
+          <div class="shield-status-orb">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h4 class="update-status-title">Aplikasi Sudah Terkini</h4>
+          <p class="update-status-desc">
+            Anda sedang menjalankan versi terbaru TimelineFlow (<strong id="latestVersionBadge">v1.2.0</strong>). Seluruh sistem dan fitur telah optimal.
+          </p>
+
+          <div class="confirm-actions" style="margin-top: 20px;">
+            <button type="button" class="btn-primary" id="btnCloseUpdateLatest" style="min-width: 130px;">Tutup</button>
+          </div>
+        </div>
+
+        <!-- STATE 6: ERROR OR OFFLINE -->
+        <div class="update-state-view" id="updateStateError" style="display: none;">
+          <div class="error-status-orb">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <h4 class="update-status-title">Gagal Memeriksa Pembaruan</h4>
+          <p class="update-status-desc" id="updateErrorDetailText">
+            Tidak dapat terhubung ke server rilis GitHub. Pastikan koneksi internet Anda aktif lalu coba beberapa saat lagi.
+          </p>
+
+          <div class="confirm-actions" style="margin-top: 20px;">
+            <button type="button" class="btn-cancel" id="btnCloseUpdateError">Tutup</button>
+            <button type="button" class="btn-primary" id="btnRetryUpdateCheck">
+              <i class="fa-solid fa-rotate-right"></i>
+              <span>Coba Lagi</span>
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
