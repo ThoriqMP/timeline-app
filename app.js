@@ -579,8 +579,21 @@
       printRoadmapBtn: document.getElementById('printRoadmapBtn'),
       quartersGrid: document.getElementById('quartersGrid'),
 
-      // Print Report Container
+      // Print Report Container & PDF Preview Modal
       printReportContainer: document.getElementById('printReportContainer'),
+      pdfPreviewModalOverlay: document.getElementById('pdfPreviewModalOverlay'),
+      closePdfPreviewModalBtn: document.getElementById('closePdfPreviewModalBtn'),
+      cancelPdfPreviewBtn: document.getElementById('cancelPdfPreviewBtn'),
+      executePrintFromPreviewBtn: document.getElementById('executePrintFromPreviewBtn'),
+      tabPdfDaily: document.getElementById('tabPdfDaily'),
+      tabPdfRoadmap: document.getElementById('tabPdfRoadmap'),
+      tabPdfItinerary: document.getElementById('tabPdfItinerary'),
+      btnPdfZoomOut: document.getElementById('btnPdfZoomOut'),
+      btnPdfZoomIn: document.getElementById('btnPdfZoomIn'),
+      btnPdfZoomReset: document.getElementById('btnPdfZoomReset'),
+      pdfZoomVal: document.getElementById('pdfZoomVal'),
+      pdfPaperWrapper: document.getElementById('pdfPaperWrapper'),
+      pdfPreviewContent: document.getElementById('pdfPreviewContent'),
 
       // Itinerary Dashboard & Detail
       itineraryDashboardView: document.getElementById('itineraryDashboardView'),
@@ -3572,32 +3585,105 @@
   }
 
   // ==========================================================================
-  // COMPREHENSIVE & IMMERSIVE PRINT REPORT GENERATOR (PDF READY)
+  // COMPREHENSIVE & IMMERSIVE PRINT REPORT GENERATOR (PDF PREVIEW & PRINT READY)
   // ==========================================================================
 
-  function printDailyPlanReport() {
+  const pdfPreviewState = {
+    currentReportType: 'daily',
+    zoom: 1.0
+  };
+
+  function openPdfPreviewModal(reportType) {
+    if (!reportType) {
+      reportType = state.data.viewMode || 'daily';
+    }
+    pdfPreviewState.currentReportType = reportType;
+    pdfPreviewState.zoom = 1.0;
+    updatePdfZoomDisplay();
+
+    // Update active tab buttons
+    const tabs = [DOM.tabPdfDaily, DOM.tabPdfRoadmap, DOM.tabPdfItinerary];
+    tabs.forEach(tab => {
+      if (tab) {
+        if (tab.getAttribute('data-report-type') === reportType) {
+          tab.classList.add('is-active');
+        } else {
+          tab.classList.remove('is-active');
+        }
+      }
+    });
+
+    renderPdfPreview();
+
+    if (DOM.pdfPreviewModalOverlay) {
+      DOM.pdfPreviewModalOverlay.classList.add('is-active');
+    }
+  }
+
+  function closePdfPreviewModal() {
+    if (DOM.pdfPreviewModalOverlay) {
+      DOM.pdfPreviewModalOverlay.classList.remove('is-active');
+    }
+  }
+
+  function renderPdfPreview() {
+    if (!DOM.pdfPreviewContent) return;
+    let html = '';
+    const type = pdfPreviewState.currentReportType;
+    if (type === 'roadmap') {
+      html = generateRoadmapReportHTML();
+    } else if (type === 'itinerary') {
+      html = generateItineraryReportHTML();
+    } else {
+      html = generateDailyPlanReportHTML();
+    }
+    DOM.pdfPreviewContent.innerHTML = html;
+  }
+
+  function setPdfZoom(val) {
+    if (typeof val === 'number') {
+      pdfPreviewState.zoom = Math.max(0.4, Math.min(2.5, Math.round(val * 100) / 100));
+    }
+    updatePdfZoomDisplay();
+  }
+
+  function updatePdfZoomDisplay() {
+    if (DOM.pdfZoomVal) {
+      DOM.pdfZoomVal.textContent = `${Math.round(pdfPreviewState.zoom * 100)}%`;
+    }
+    if (DOM.pdfPaperWrapper) {
+      DOM.pdfPaperWrapper.style.transform = `scale(${pdfPreviewState.zoom})`;
+    }
+  }
+
+  function executeActualPrint() {
     if (!DOM.printReportContainer) return;
-    DOM.printReportContainer.innerHTML = generateDailyPlanReportHTML();
+    const type = pdfPreviewState.currentReportType || 'daily';
+    let html = '';
+    if (type === 'roadmap') {
+      html = generateRoadmapReportHTML();
+    } else if (type === 'itinerary') {
+      html = generateItineraryReportHTML();
+    } else {
+      html = generateDailyPlanReportHTML();
+    }
+    DOM.printReportContainer.innerHTML = html;
     setTimeout(() => {
       window.print();
     }, 50);
+  }
+
+  function printDailyPlanReport() {
+    openPdfPreviewModal('daily');
   }
 
   function printRoadmapReport() {
-    if (!DOM.printReportContainer) return;
-    DOM.printReportContainer.innerHTML = generateRoadmapReportHTML();
-    setTimeout(() => {
-      window.print();
-    }, 50);
+    openPdfPreviewModal('roadmap');
   }
 
   function printItineraryReport() {
-    if (!DOM.printReportContainer) return;
     closeShareTripModal();
-    DOM.printReportContainer.innerHTML = generateItineraryReportHTML();
-    setTimeout(() => {
-      window.print();
-    }, 50);
+    openPdfPreviewModal('itinerary');
   }
 
   function printTripItinerary() {
@@ -3606,13 +3692,7 @@
 
   function printActiveViewReport() {
     const view = state.data.viewMode || 'daily';
-    if (view === 'roadmap') {
-      printRoadmapReport();
-    } else if (view === 'itinerary') {
-      printItineraryReport();
-    } else {
-      printDailyPlanReport();
-    }
+    openPdfPreviewModal(view);
   }
 
   function generateDailyPlanReportHTML() {
@@ -3704,10 +3784,13 @@
 
     return `
       <div class="print-header">
-        <div class="print-brand-col">
-          <div class="print-brand-badge">TimelineFlow • Productivity Planner</div>
-          <h1 class="print-doc-title">Laporan Rencana Kerja & Jadwal Rutin</h1>
-          <p class="print-doc-subtitle">Plan: <strong>${escapeHtml(plan.title || 'Work Routine')}</strong> — Evaluasi Alokasi Waktu Mingguan</p>
+        <div style="display: flex; align-items: center; gap: 14px; flex: 1;">
+          <img src="logo.png" style="height: 48px; width: 48px; object-fit: contain; border-radius: 8px;" alt="Logo" />
+          <div class="print-brand-col">
+            <div class="print-brand-badge">TimelineFlow • Productivity Planner</div>
+            <h1 class="print-doc-title">Laporan Rencana Kerja & Jadwal Mingguan</h1>
+            <p class="print-doc-subtitle">Plan: <strong>${escapeHtml(plan.title || 'Work Routine')}</strong> — Evaluasi Alokasi Waktu Mingguan</p>
+          </div>
         </div>
         <div class="print-meta-col">
           <div>Tanggal Laporan: <strong>${dateFormatted}</strong></div>
@@ -3735,6 +3818,11 @@
       </div>
 
       ${daysHtml}
+
+      <div class="print-planner-quote">
+        <div class="print-quote-text">“A little progress each day adds up to big results.”</div>
+        <div class="print-quote-author">— Satya Nani • TimelineFlow Executive Weekly Routine</div>
+      </div>
 
       <div class="print-footer">
         <span>TimelineFlow Desktop App • Laporan Rencana Harian</span>
@@ -3854,10 +3942,13 @@
 
     return `
       <div class="print-header">
-        <div class="print-brand-col">
-          <div class="print-brand-badge">TimelineFlow • Strategic Roadmap</div>
-          <h1 class="print-doc-title">Laporan Roadmap Tahunan & Target Kuartal (${year})</h1>
-          <p class="print-doc-subtitle">Pemetaan Target Finansial, Milestone Strategis & Eksekusi Kuartal 1 - 4</p>
+        <div style="display: flex; align-items: center; gap: 14px; flex: 1;">
+          <img src="logo.png" style="height: 48px; width: 48px; object-fit: contain; border-radius: 8px;" alt="Logo" />
+          <div class="print-brand-col">
+            <div class="print-brand-badge">TimelineFlow • Strategic Roadmap</div>
+            <h1 class="print-doc-title">Laporan Roadmap Tahunan & Target Kuartal (${year})</h1>
+            <p class="print-doc-subtitle">Pemetaan Target Finansial, Milestone Strategis & Eksekusi Kuartal 1 - 4</p>
+          </div>
         </div>
         <div class="print-meta-col">
           <div>Tanggal Laporan: <strong>${dateFormatted}</strong></div>
@@ -3998,10 +4089,13 @@
 
     return `
       <div class="print-header">
-        <div class="print-brand-col">
-          <div class="print-brand-badge">TimelineFlow • Travel & Itinerary Planner</div>
-          <h1 class="print-doc-title">Laporan Rencana Perjalanan & Estimasi Anggaran</h1>
-          <p class="print-doc-subtitle">Trip: <strong>${escapeHtml(trip.title || 'Trip')}</strong> • Periode: ${formatDateIndo(trip.startDate)} s.d. ${formatDateIndo(trip.endDate)}</p>
+        <div style="display: flex; align-items: center; gap: 14px; flex: 1;">
+          <img src="logo.png" style="height: 48px; width: 48px; object-fit: contain; border-radius: 8px;" alt="Logo" />
+          <div class="print-brand-col">
+            <div class="print-brand-badge">TimelineFlow • Travel & Itinerary Planner</div>
+            <h1 class="print-doc-title">Laporan Rencana Perjalanan & Estimasi Anggaran</h1>
+            <p class="print-doc-subtitle">Trip: <strong>${escapeHtml(trip.title || 'Trip')}</strong> • Periode: ${formatDateIndo(trip.startDate)} s.d. ${formatDateIndo(trip.endDate)}</p>
+          </div>
         </div>
         <div class="print-meta-col">
           <div>Tanggal Laporan: <strong>${dateFormatted}</strong></div>
@@ -4383,6 +4477,7 @@
       window.electronAPI.onMenuTrigger('menu-new-task', () => openTaskModal(getTodayDayKey()));
       window.electronAPI.onMenuTrigger('menu-export', () => exportData());
       window.electronAPI.onMenuTrigger('menu-import', () => triggerImport());
+      window.electronAPI.onMenuTrigger('trigger-print', () => openPdfPreviewModal());
     }
 
     // Confirmation dialog actions
@@ -4400,6 +4495,34 @@
     if (DOM.dragMoveBtn) DOM.dragMoveBtn.addEventListener('click', executeDragMove);
     if (DOM.dragDuplicateBtn) DOM.dragDuplicateBtn.addEventListener('click', executeDragDuplicate);
     if (DOM.cancelDragActionBtn) DOM.cancelDragActionBtn.addEventListener('click', closeDragActionModal);
+
+    // PDF Preview Modal Actions
+    if (DOM.closePdfPreviewModalBtn) DOM.closePdfPreviewModalBtn.addEventListener('click', closePdfPreviewModal);
+    if (DOM.cancelPdfPreviewBtn) DOM.cancelPdfPreviewBtn.addEventListener('click', closePdfPreviewModal);
+    if (DOM.executePrintFromPreviewBtn) DOM.executePrintFromPreviewBtn.addEventListener('click', executeActualPrint);
+
+    [DOM.tabPdfDaily, DOM.tabPdfRoadmap, DOM.tabPdfItinerary].forEach(tab => {
+      if (tab) {
+        tab.addEventListener('click', () => {
+          const type = tab.getAttribute('data-report-type') || 'daily';
+          pdfPreviewState.currentReportType = type;
+          [DOM.tabPdfDaily, DOM.tabPdfRoadmap, DOM.tabPdfItinerary].forEach(t => {
+            if (t) t.classList.toggle('is-active', t === tab);
+          });
+          renderPdfPreview();
+        });
+      }
+    });
+
+    if (DOM.btnPdfZoomIn) {
+      DOM.btnPdfZoomIn.addEventListener('click', () => setPdfZoom(pdfPreviewState.zoom + 0.15));
+    }
+    if (DOM.btnPdfZoomOut) {
+      DOM.btnPdfZoomOut.addEventListener('click', () => setPdfZoom(pdfPreviewState.zoom - 0.15));
+    }
+    if (DOM.btnPdfZoomReset) {
+      DOM.btnPdfZoomReset.addEventListener('click', () => setPdfZoom(1.0));
+    }
 
     // App Info Modal Actions
     if (DOM.appInfoNavBtn) DOM.appInfoNavBtn.addEventListener('click', openAppInfoModal);
@@ -4447,6 +4570,7 @@
       DOM.tripModalOverlay,
       DOM.activityModalOverlay,
       DOM.shareTripModalOverlay,
+      DOM.pdfPreviewModalOverlay,
       DOM.userProfileModalOverlay,
       DOM.appInfoModalOverlay,
       DOM.updateModalOverlay
@@ -4463,8 +4587,15 @@
       }
     });
 
-    // Escape key listener
+    // Keyboard Shortcuts listener (Cmd/Ctrl + P, Escape, etc.)
     window.addEventListener('keydown', (e) => {
+      // Cmd+P or Ctrl+P: Open PDF Preview modal
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        openPdfPreviewModal();
+        return;
+      }
+
       if (e.key === 'Escape') {
         [
           DOM.roadmapItemModalOverlay,
@@ -4477,6 +4608,7 @@
           DOM.tripModalOverlay,
           DOM.activityModalOverlay,
           DOM.shareTripModalOverlay,
+          DOM.pdfPreviewModalOverlay,
           DOM.userProfileModalOverlay,
           DOM.appInfoModalOverlay,
           DOM.updateModalOverlay
@@ -4498,7 +4630,7 @@
     if (DOM.userProfileModalOverlay) DOM.userProfileModalOverlay.classList.remove('is-active');
     if (DOM.updateModalOverlay) DOM.updateModalOverlay.classList.remove('is-active');
 
-    const curVer = updateState.currentVersion || '1.4.0';
+    const curVer = updateState.currentVersion || '1.5.0';
     if (DOM.appInfoVersionBadge) DOM.appInfoVersionBadge.textContent = `v${curVer}`;
     if (DOM.appInfoVerText) DOM.appInfoVerText.textContent = `${curVer} (Official)`;
 
@@ -4526,7 +4658,7 @@
   }
 
   const updateState = {
-    currentVersion: '1.4.0',
+    currentVersion: '1.5.0',
     availableUpdateInfo: null,
     isDownloading: false
   };
@@ -4706,15 +4838,17 @@
         throw new Error(`Server rilis GitHub merespon dengan status ${response.status}`);
       }
       const data = await response.json();
-      const latestTag = (data.tag_name || data.name || '1.4.2').replace(/^v/, '').trim();
-      const currentVer = String(updateState.currentVersion || '1.4.2').replace(/^v/, '').trim();
+      const latestTag = (data.tag_name || data.name || '1.5.0').replace(/^v/, '').trim();
+      const currentVer = String(updateState.currentVersion || '1.5.0').replace(/^v/, '').trim();
 
       const defaultNotes = `
 ### Fitur Baru & Peningkatan Versi ${latestTag}:
+- 🖼️ **Logo Baru Timeline**: Pembaruan identitas visual dengan logo resmi Timeline beresolusi tinggi.
+- 👁️ **Preview Cetak PDF Interaktif**: Tinjau dokumen (Jadwal Mingguan, Roadmap Tahunan, & Itinerary Perjalanan) sebelum mencetak/ekspor dengan kontrol zoom interaktif.
 - 🚀 **Double-Layer Navigation**: Tampilan navigasi dua tingkat yang rapi, modern, dan ergonomis.
-- 🎨 **Icon Vector Overhaul**: Seluruh ikon diperbarui ke font vector Font Awesome profesional.
-- 📋 **Drag-and-Drop & Duplicate Support**: Fleksibilitas memindahkan atau menggandakan target harian dan roadmap.
-- 🖨️ **Executive PDF Reporting**: Pencetakan dokumen kalender dan aktivitas berkualitas tinggi.
+- 🎨 **Icon Vector Overhaul**: Seluruh ikon diperbarui ke font vector Font Awesome profesional tanpa gradasi yang mengganggu.
+- 📋 **Drag-and-Drop & Duplicate Support**: Fleksibilitas memindahkan atau menduplikat target harian dan roadmap.
+- 🖨️ **Executive PDF Reporting**: Pencetakan dokumen kalender dan aktivitas berkualitas tinggi berformat planner.
 - ⚡ **Resilient Chunked Downloader**: Pengunduhan paket rilis (~240MB) dengan streaming chunk data yang stabil dan tahan gangguan jaringan.
 - 🛡️ **Anti-Looping Release Verification**: Verifikasi kesiapan berkas rilis di server sebelum pengunduhan dibuka.
       `.trim();
@@ -4828,7 +4962,7 @@
         DOM.btnStartUpdateDownload.innerHTML = '<i class="fa-solid fa-cloud-arrow-down"></i> <span>Unduh & Pasang Sekarang</span>';
       }
 
-      const newVer = data.version || (updateState.availableUpdateInfo && updateState.availableUpdateInfo.version) || '1.4.2';
+      const newVer = data.version || (updateState.availableUpdateInfo && updateState.availableUpdateInfo.version) || '1.5.0';
       if (DOM.updateCurrentVersionText) DOM.updateCurrentVersionText.textContent = `v${updateState.currentVersion}`;
       if (DOM.updateNewVersionText) DOM.updateNewVersionText.textContent = `v${newVer}`;
 

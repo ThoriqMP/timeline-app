@@ -169,10 +169,10 @@ function setupAppMenu() {
         },
         { type: 'separator' },
         {
-          label: '🖨️ Cetak / Print Timeline',
+          label: '🖨️ Preview & Cetak Dokumen PDF',
           accelerator: 'CmdOrCtrl+P',
           click: () => {
-            if (mainWindow) mainWindow.webContents.print();
+            if (mainWindow) mainWindow.webContents.send('trigger-print');
           }
         },
         { type: 'separator' },

@@ -4264,167 +4264,177 @@ label {
     background: #ffffff !important;
     color: #0f172a !important;
   }
+}
 
-  .print-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    border-bottom: 2px solid #0f172a;
-    padding-bottom: 14px;
-    margin-bottom: 20px;
-  }
+/* ==========================================================================
+   SHARED REPORT DOCUMENT STYLES (Used for both Print Media & PDF Preview Sheet)
+   ========================================================================== */
 
-  .print-brand-col {
-    flex: 1;
-  }
+.print-report-container,
+.pdf-paper-sheet {
+  background: #ffffff;
+  color: #0f172a;
+}
 
-  .print-brand-badge {
-    display: inline-block;
-    font-size: 8pt;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: #4f46e5;
-    background: #eef2ff;
-    padding: 2px 8px;
-    border-radius: 4px;
-    margin-bottom: 6px;
-  }
+.print-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  border-bottom: 2px solid #0f172a;
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+}
 
-  .print-doc-title {
-    font-size: 18pt;
-    font-weight: 800;
-    color: #0f172a;
-    letter-spacing: -0.3px;
-    margin: 0 0 4px;
-  }
+.print-brand-col {
+  flex: 1;
+}
 
-  .print-doc-subtitle {
-    font-size: 9.5pt;
-    color: #475569;
-    margin: 0;
-  }
+.print-brand-badge {
+  display: inline-block;
+  font-size: 8pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #4f46e5;
+  background: #eef2ff;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+}
 
-  .print-meta-col {
-    text-align: right;
-    font-size: 8.5pt;
-    color: #64748b;
-    line-height: 1.6;
-  }
+.print-doc-title {
+  font-size: 18pt;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.3px;
+  margin: 0 0 4px;
+}
 
-  .print-meta-col strong {
-    color: #0f172a;
-  }
+.print-doc-subtitle {
+  font-size: 9.5pt;
+  color: #475569;
+  margin: 0;
+}
 
-  /* Key Metrics Cards in Print */
-  .print-kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-bottom: 20px;
-  }
+.print-meta-col {
+  text-align: right;
+  font-size: 8.5pt;
+  color: #64748b;
+  line-height: 1.6;
+}
 
-  .print-kpi-card {
-    border: 1px solid #cbd5e1;
-    border-radius: 6px;
-    padding: 10px 12px;
-    background: #f8fafc;
-  }
+.print-meta-col strong {
+  color: #0f172a;
+}
 
-  .print-kpi-label {
-    font-size: 7.5pt;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: #64748b;
-    margin-bottom: 4px;
-  }
+/* Key Metrics Cards in Print */
+.print-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+}
 
-  .print-kpi-val {
-    font-size: 13pt;
-    font-weight: 800;
-    color: #0f172a;
-  }
+.print-kpi-card {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: #f8fafc;
+}
 
-  /* Print Section & Tables */
-  .print-section {
-    margin-bottom: 22px;
-    page-break-inside: avoid;
-  }
+.print-kpi-label {
+  font-size: 7.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
 
-  .print-section-title {
-    font-size: 11pt;
-    font-weight: 700;
-    color: #0f172a;
-    border-bottom: 1.5px solid #e2e8f0;
-    padding-bottom: 6px;
-    margin: 0 0 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
+.print-kpi-val {
+  font-size: 13pt;
+  font-weight: 800;
+  color: #0f172a;
+}
 
-  .print-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 16px;
-    font-size: 9pt;
-  }
+/* Print Section & Tables */
+.print-section {
+  margin-bottom: 22px;
+  page-break-inside: avoid;
+}
 
-  .print-table th {
-    background: #f1f5f9;
-    color: #1e293b;
-    font-weight: 700;
-    text-align: left;
-    padding: 7px 10px;
-    border: 1px solid #cbd5e1;
-    font-size: 8pt;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-  }
+.print-section-title {
+  font-size: 11pt;
+  font-weight: 700;
+  color: #0f172a;
+  border-bottom: 1.5px solid #e2e8f0;
+  padding-bottom: 6px;
+  margin: 0 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
 
-  .print-table td {
-    padding: 7px 10px;
-    border: 1px solid #e2e8f0;
-    vertical-align: top;
-    color: #1e293b;
-  }
+.print-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  font-size: 9pt;
+}
 
-  .print-table tr:nth-child(even) td {
-    background: #f8fafc;
-  }
+.print-table th {
+  background: #f1f5f9;
+  color: #1e293b;
+  font-weight: 700;
+  text-align: left;
+  padding: 7px 10px;
+  border: 1px solid #cbd5e1;
+  font-size: 8pt;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
 
-  .print-badge {
-    display: inline-block;
-    padding: 2px 6px;
-    border-radius: 3px;
-    font-size: 7.5pt;
-    font-weight: 700;
-    border: 1px solid #cbd5e1;
-    background: #ffffff;
-    color: #1e293b;
-  }
+.print-table td {
+  padding: 7px 10px;
+  border: 1px solid #e2e8f0;
+  vertical-align: top;
+  color: #1e293b;
+}
 
-  .print-subitems-list {
-    margin: 4px 0 0;
-    padding-left: 18px;
-    font-size: 8.5pt;
-    color: #334155;
-  }
+.print-table tr:nth-child(even) td {
+  background: #f8fafc;
+}
 
-  .print-subitems-list li {
-    margin-bottom: 2px;
-  }
+.print-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 7.5pt;
+  font-weight: 700;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #1e293b;
+}
 
-  .print-footer {
-    border-top: 1px solid #cbd5e1;
-    padding-top: 8px;
-    margin-top: 24px;
-    display: flex;
-    justify-content: space-between;
-    font-size: 8pt;
-    color: #94a3b8;
-  }
+.print-subitems-list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 8.5pt;
+  color: #334155;
+}
+
+.print-subitems-list li {
+  margin-bottom: 2px;
+}
+
+.print-footer {
+  border-top: 1px solid #cbd5e1;
+  padding-top: 8px;
+  margin-top: 24px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 8pt;
+  color: #94a3b8;
 }
 
 /* ==========================================================================
@@ -5182,4 +5192,236 @@ label {
 .btn-info-profile:hover {
   background: rgba(14, 165, 233, 0.2) !important;
   border-color: #38bdf8 !important;
+}
+
+/* ==========================================================================
+   INTERACTIVE PDF PRINT PREVIEW MODAL
+   ========================================================================== */
+
+.modal-box-pdf-preview {
+  width: 95vw;
+  max-width: 1100px;
+  height: 92vh;
+  max-height: 92vh;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.pdf-preview-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-surface);
+  flex-shrink: 0;
+}
+
+.modal-icon-pdf-badge {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+}
+
+.pdf-preview-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pdf-type-switcher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.pdf-type-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.pdf-type-tab:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.pdf-type-tab.is-active {
+  color: #ffffff;
+  background: var(--primary);
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+}
+
+.pdf-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pdf-zoom-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-surface);
+  padding: 3px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.pdf-tool-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  width: 28px;
+  height: 28px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
+}
+
+.pdf-tool-btn:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pdf-zoom-val {
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: monospace;
+  color: var(--text-main);
+  min-width: 44px;
+  text-align: center;
+}
+
+.pdf-paper-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-muted);
+}
+
+.pdf-preview-viewport {
+  flex: 1;
+  overflow: auto;
+  padding: 28px 20px;
+  background: #0f172a;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.pdf-paper-wrapper {
+  display: flex;
+  justify-content: center;
+  transform-origin: top center;
+  transition: transform 0.15s ease;
+  width: 100%;
+}
+
+.pdf-paper-sheet {
+  width: 210mm;
+  max-width: 100%;
+  min-height: 297mm;
+  background: #ffffff;
+  color: #0f172a;
+  padding: 16mm 18mm;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+}
+
+/* Quote banner styling inspired by user's weekly planner design */
+.print-planner-quote {
+  background: #1e293b;
+  color: #f8fafc;
+  padding: 10px 16px;
+  border-radius: 6px;
+  text-align: center;
+  margin-top: 20px;
+  margin-bottom: 12px;
+}
+
+.print-quote-text {
+  font-size: 9.5pt;
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  margin-bottom: 2px;
+}
+
+.print-quote-author {
+  font-size: 7.5pt;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.pdf-preview-footer {
+  padding: 14px 22px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.pdf-footer-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.pdf-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#executePrintFromPreviewBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  padding: 9px 18px;
 }

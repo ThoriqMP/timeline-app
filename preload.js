@@ -1,10 +1,10 @@
 // TimelineFlow Preload Script
 const { contextBridge, ipcRenderer } = require("electron");
 
-let version = "1.4.2";
+let version = "1.5.0";
 try {
   const packageJson = require("./package.json");
-  version = packageJson.version || "1.4.2";
+  version = packageJson.version || "1.5.0";
 } catch (e) {
   // fallback
 }
