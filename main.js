@@ -9,6 +9,16 @@ autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = false;
 
 function setupAutoUpdater() {
+  try {
+    autoUpdater.setFeedURL({
+      provider: 'github',
+      owner: 'ThoriqMP',
+      repo: 'timeline-app'
+    });
+  } catch (err) {
+    console.warn('Gagal menetapkan feed URL autoUpdater:', err);
+  }
+
   autoUpdater.on('checking-for-update', () => {
     console.log('Memeriksa pembaruan...');
     if (mainWindow) {
@@ -64,7 +74,7 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: true,
+      sandbox: false,
       spellcheck: false
     },
     show: false
@@ -101,7 +111,12 @@ function setupAppMenu() {
           {
             label: app.name,
             submenu: [
-              { role: 'about', label: 'Tentang TimelineFlow' },
+              {
+                label: 'Tentang TimelineFlow',
+                click: () => {
+                  if (mainWindow) mainWindow.webContents.send('menu-app-info');
+                }
+              },
               { type: 'separator' },
               { role: 'services', label: 'Layanan' },
               { type: 'separator' },
@@ -203,6 +218,12 @@ function setupAppMenu() {
       label: 'Bantuan',
       submenu: [
         {
+          label: 'Tentang & Info Aplikasi',
+          click: () => {
+            if (mainWindow) mainWindow.webContents.send('menu-app-info');
+          }
+        },
+        {
           label: 'Periksa Pembaruan...',
           click: () => {
             if (mainWindow) {
@@ -228,6 +249,13 @@ function setupAppMenu() {
 // IPC listener for print request from UI
 ipcMain.on('window-print', () => {
   if (mainWindow) mainWindow.webContents.print();
+});
+
+// IPC listener for opening external URLs safely
+ipcMain.on('open-external-url', (_event, url) => {
+  if (url && (url.startsWith('http:') || url.startsWith('https:'))) {
+    shell.openExternal(url);
+  }
 });
 
 // IPC listener for checking updates

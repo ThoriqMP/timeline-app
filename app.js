@@ -768,6 +768,18 @@
       tooltipBody: document.getElementById('tooltipBody'),
       toastContainer: document.getElementById('toastContainer'),
 
+      // System Update & App Info
+      appInfoNavBtn: document.getElementById('appInfoNavBtn'),
+      profileAppInfoBtn: document.getElementById('profileAppInfoBtn'),
+      appInfoModalOverlay: document.getElementById('appInfoModalOverlay'),
+      closeAppInfoModalBtn: document.getElementById('closeAppInfoModalBtn'),
+      closeAppInfoBtn: document.getElementById('closeAppInfoBtn'),
+      appInfoCheckUpdateBtn: document.getElementById('appInfoCheckUpdateBtn'),
+      appInfoVersionBadge: document.getElementById('appInfoVersionBadge'),
+      appInfoVerText: document.getElementById('appInfoVerText'),
+      appInfoPlatformText: document.getElementById('appInfoPlatformText'),
+      appInfoWaLink: document.getElementById('appInfoWaLink'),
+
       // System Update Modal
       checkUpdateNavBtn: document.getElementById('checkUpdateNavBtn'),
       profileCheckUpdateBtn: document.getElementById('profileCheckUpdateBtn'),
@@ -4383,6 +4395,16 @@
     if (DOM.dragDuplicateBtn) DOM.dragDuplicateBtn.addEventListener('click', executeDragDuplicate);
     if (DOM.cancelDragActionBtn) DOM.cancelDragActionBtn.addEventListener('click', closeDragActionModal);
 
+    // App Info Modal Actions
+    if (DOM.appInfoNavBtn) DOM.appInfoNavBtn.addEventListener('click', openAppInfoModal);
+    if (DOM.profileAppInfoBtn) DOM.profileAppInfoBtn.addEventListener('click', openAppInfoModal);
+    if (DOM.closeAppInfoModalBtn) DOM.closeAppInfoModalBtn.addEventListener('click', closeAppInfoModal);
+    if (DOM.closeAppInfoBtn) DOM.closeAppInfoBtn.addEventListener('click', closeAppInfoModal);
+    if (DOM.appInfoCheckUpdateBtn) DOM.appInfoCheckUpdateBtn.addEventListener('click', (e) => {
+      closeAppInfoModal();
+      triggerCheckForUpdates(e);
+    });
+
     // Update Modal Actions
     if (DOM.checkUpdateNavBtn) DOM.checkUpdateNavBtn.addEventListener('click', triggerCheckForUpdates);
     if (DOM.profileCheckUpdateBtn) DOM.profileCheckUpdateBtn.addEventListener('click', triggerCheckForUpdates);
@@ -4408,6 +4430,7 @@
       DOM.activityModalOverlay,
       DOM.shareTripModalOverlay,
       DOM.userProfileModalOverlay,
+      DOM.appInfoModalOverlay,
       DOM.updateModalOverlay
     ].forEach(overlay => {
       if (overlay) {
@@ -4437,6 +4460,7 @@
           DOM.activityModalOverlay,
           DOM.shareTripModalOverlay,
           DOM.userProfileModalOverlay,
+          DOM.appInfoModalOverlay,
           DOM.updateModalOverlay
         ].forEach(ov => {
           if (ov && ov.classList.contains('is-active')) {
@@ -4449,11 +4473,42 @@
   }
 
   // ==========================================================================
-  // SYSTEM UPDATE CHECKER, RELEASE NOTES & CONFIRMATION ENGINE
+  // APP INFO & SYSTEM UPDATE CHECKER ENGINE (BULLETPROOF HYBRID)
   // ==========================================================================
 
+  function openAppInfoModal() {
+    if (DOM.userProfileModalOverlay) DOM.userProfileModalOverlay.classList.remove('is-active');
+    if (DOM.updateModalOverlay) DOM.updateModalOverlay.classList.remove('is-active');
+
+    const curVer = updateState.currentVersion || '1.4.0';
+    if (DOM.appInfoVersionBadge) DOM.appInfoVersionBadge.textContent = `v${curVer}`;
+    if (DOM.appInfoVerText) DOM.appInfoVerText.textContent = `${curVer} (Official)`;
+
+    if (DOM.appInfoPlatformText) {
+      let pName = 'macOS (Desktop Application)';
+      if (window.electronAPI) {
+        if (window.electronAPI.platform === 'darwin') pName = 'macOS (Desktop Application)';
+        else if (window.electronAPI.platform === 'win32') pName = 'Windows (Desktop Application)';
+        else if (window.electronAPI.platform === 'linux') pName = 'Linux (Desktop Application)';
+      } else {
+        pName = `${navigator.platform || 'Web Browser'} (Web Engine)`;
+      }
+      DOM.appInfoPlatformText.textContent = pName;
+    }
+
+    if (DOM.appInfoModalOverlay) {
+      DOM.appInfoModalOverlay.classList.add('is-active');
+    }
+  }
+
+  function closeAppInfoModal() {
+    if (DOM.appInfoModalOverlay) {
+      DOM.appInfoModalOverlay.classList.remove('is-active');
+    }
+  }
+
   const updateState = {
-    currentVersion: '1.3.0',
+    currentVersion: '1.4.0',
     availableUpdateInfo: null,
     isDownloading: false
   };
@@ -4471,11 +4526,20 @@
     if (DOM.latestVersionBadge) {
       DOM.latestVersionBadge.textContent = `v${updateState.currentVersion}`;
     }
+    if (DOM.appInfoVersionBadge) {
+      DOM.appInfoVersionBadge.textContent = `v${updateState.currentVersion}`;
+    }
+    if (DOM.appInfoVerText) {
+      DOM.appInfoVerText.textContent = `${updateState.currentVersion} (Official)`;
+    }
 
     // Listen to native menu trigger
     if (window.electronAPI && typeof window.electronAPI.onMenuTrigger === 'function') {
       window.electronAPI.onMenuTrigger('trigger-check-update', () => {
         triggerCheckForUpdates();
+      });
+      window.electronAPI.onMenuTrigger('menu-app-info', () => {
+        openAppInfoModal();
       });
     }
 
@@ -4503,24 +4567,17 @@
       });
 
       window.electronAPI.onUpdaterEvent('updater-error', (errMsg) => {
-        setUpdateModalState('error', { message: errMsg });
+        console.warn('AutoUpdater Electron Error:', errMsg);
+        // Fallback langsung ke GitHub Release API jika autoUpdater menemui kendala local config
+        checkGitHubDirectFallback();
       });
 
       window.electronAPI.onUpdaterEvent('updater-dev-mode', () => {
-        // In dev mode, show an interactive showcase of what's new & confirmation
-        updateState.availableUpdateInfo = {
-          version: '1.3.0',
-          releaseName: 'TimelineFlow v1.3.0 Update',
-          releaseNotes: `
-### Fitur Baru & Peningkatan:
-- 🚀 **Double-Layer Navigation**: Tampilan navigasi dua tingkat yang rapi, modern, dan ergonomis.
-- 🎨 **Icon Vector Overhaul**: Menghilangkan seluruh AI emoji slop dan menggantinya dengan Font Awesome profesional.
-- 📋 **Drag-and-Drop & Duplicate Support**: Bebas memilih antara memindahkan atau menyalin tugas harian dan inisiatif roadmap tahunan.
-- 🔄 **Pusat Pembaruan Beranimasi**: Pemindai radar otomatis dengan konfirmasi unduhan dan rincian fitur baru.
-- ⚡ **Optimasi Performa**: Respons UI lebih cepat dan alokasi memori lebih hemat.
-          `.trim()
-        };
-        setUpdateModalState('available', updateState.availableUpdateInfo);
+        checkGitHubDirectFallback();
+      });
+
+      window.electronAPI.onUpdaterEvent('menu-app-info', () => {
+        openAppInfoModal();
       });
     }
   }
@@ -4529,6 +4586,9 @@
   let updateCheckStepInterval = null;
 
   function openUpdateModal(initialState = 'checking') {
+    if (DOM.userProfileModalOverlay) DOM.userProfileModalOverlay.classList.remove('is-active');
+    if (DOM.appInfoModalOverlay) DOM.appInfoModalOverlay.classList.remove('is-active');
+
     if (DOM.updateModalOverlay) {
       DOM.updateModalOverlay.classList.add('is-active');
     }
@@ -4543,7 +4603,10 @@
     }
   }
 
-  function triggerCheckForUpdates() {
+  function triggerCheckForUpdates(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+
     openUpdateModal('checking');
     clearTimeout(updateCheckTimeout);
     clearInterval(updateCheckStepInterval);
@@ -4555,35 +4618,95 @@
     updateCheckStepInterval = setInterval(() => {
       elapsed += 1;
       if (descEl) {
-        if (elapsed === 2) {
+        if (elapsed === 1) {
           descEl.textContent = 'Membaca metadata rilis terbaru di GitHub...';
-        } else if (elapsed === 4) {
+        } else if (elapsed === 3) {
           descEl.textContent = 'Memverifikasi paket rilis dan catatan fitur baru...';
-        } else if (elapsed === 7) {
+        } else if (elapsed === 5) {
           descEl.textContent = 'Menyelesaikan sinkronisasi server...';
         }
       }
     }, 1000);
 
-    // Timeout safety net (12 seconds)
+    // Timeout safety net (8 seconds) -> Auto fallback to direct GitHub check
     updateCheckTimeout = setTimeout(() => {
       clearInterval(updateCheckStepInterval);
       if (DOM.updateStateChecking && DOM.updateStateChecking.style.display !== 'none') {
-        setUpdateModalState('error', {
-          message: 'Koneksi ke GitHub memerlukan waktu lebih lama dari biasanya. Silakan coba kembali beberapa saat lagi.'
-        });
+        checkGitHubDirectFallback();
       }
-    }, 12000);
+    }, 8000);
 
     if (window.electronAPI && typeof window.electronAPI.checkForUpdates === 'function') {
-      window.electronAPI.checkForUpdates();
+      try {
+        window.electronAPI.checkForUpdates();
+      } catch (err) {
+        console.warn('Error calling checkForUpdates:', err);
+        checkGitHubDirectFallback();
+      }
     } else {
-      // Fallback if accessed through web browser
       setTimeout(() => {
-        clearInterval(updateCheckStepInterval);
-        clearTimeout(updateCheckTimeout);
-        setUpdateModalState('latest', { version: updateState.currentVersion });
-      }, 1400);
+        checkGitHubDirectFallback();
+      }, 1200);
+    }
+  }
+
+  function compareSemVer(a, b) {
+    const pa = String(a || '0').replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+    const pb = String(b || '0').replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+    for (let i = 0; i < 3; i++) {
+      const na = pa[i] || 0;
+      const nb = pb[i] || 0;
+      if (na > nb) return 1;
+      if (na < nb) return -1;
+    }
+    return 0;
+  }
+
+  async function checkGitHubDirectFallback() {
+    clearInterval(updateCheckStepInterval);
+    clearTimeout(updateCheckTimeout);
+
+    try {
+      const response = await fetch('https://api.github.com/repos/ThoriqMP/timeline-app/releases/latest', {
+        headers: { 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (!response.ok) {
+        throw new Error(`Server rilis GitHub merespon dengan status ${response.status}`);
+      }
+      const data = await response.json();
+      const latestTag = (data.tag_name || data.name || '1.4.0').replace(/^v/, '').trim();
+      const currentVer = String(updateState.currentVersion || '1.4.0').replace(/^v/, '').trim();
+
+      const defaultNotes = `
+### Fitur Baru & Peningkatan Versi ${latestTag}:
+- 🚀 **Double-Layer Navigation**: Tampilan navigasi dua tingkat yang rapi, modern, dan ergonomis.
+- 🎨 **Icon Vector Overhaul**: Seluruh ikon diperbarui ke font vector Font Awesome profesional.
+- 📋 **Drag-and-Drop & Duplicate Support**: Fleksibilitas memindahkan atau menggandakan target harian dan roadmap.
+- 🖨️ **Executive PDF Reporting**: Pencetakan dokumen kalender dan aktivitas berkualitas tinggi.
+- 🔄 **Pusat Pembaruan Otomatis**: Integrasi pembaruan sistem langsung dari repositori GitHub.
+- ⚡ **Optimasi Performa**: Responsivitas sistem lebih cepat dan alokasi memori lebih hemat.
+      `.trim();
+
+      const notes = (data.body && data.body.trim()) ? data.body.trim() : defaultNotes;
+
+      const isNewer = compareSemVer(latestTag, currentVer) > 0;
+
+      if (isNewer) {
+        updateState.availableUpdateInfo = {
+          version: latestTag,
+          releaseName: data.name || `TimelineFlow v${latestTag}`,
+          releaseNotes: notes,
+          releaseUrl: data.html_url
+        };
+        setUpdateModalState('available', updateState.availableUpdateInfo);
+      } else {
+        setUpdateModalState('latest', { version: currentVer });
+      }
+    } catch (err) {
+      console.warn('Gagal memeriksa GitHub release:', err);
+      setUpdateModalState('error', {
+        message: 'Tidak dapat terhubung ke server rilis GitHub. Pastikan koneksi internet Anda aktif lalu coba beberapa saat lagi.'
+      });
     }
   }
 
@@ -4592,22 +4715,14 @@
     if (window.electronAPI && typeof window.electronAPI.startDownloadUpdate === 'function') {
       window.electronAPI.startDownloadUpdate();
     } else {
-      // Browser simulation
-      let p = 0;
-      const t = setInterval(() => {
-        p += 20;
-        if (p >= 100) {
-          clearInterval(t);
-          setUpdateModalState('ready');
-        } else {
-          setUpdateModalState('downloading', {
-            percent: p,
-            bytesPerSecond: 2800000,
-            transferred: (p / 100) * 85000000,
-            total: 85000000
-          });
-        }
-      }, 350);
+      const releaseUrl = 'https://github.com/ThoriqMP/timeline-app/releases/latest';
+      if (window.electronAPI && typeof window.electronAPI.openExternal === 'function') {
+        window.electronAPI.openExternal(releaseUrl);
+      } else {
+        window.open(releaseUrl, '_blank');
+      }
+      closeUpdateModal();
+      showToast('Membuka halaman unduhan rilis terbaru di GitHub');
     }
   }
 
@@ -4646,7 +4761,7 @@
       if (DOM.updateModalHeading) DOM.updateModalHeading.textContent = 'Pembaruan Tersedia!';
       if (DOM.updateModalSubheading) DOM.updateModalSubheading.textContent = 'Versi baru siap diunduh dan dipasang';
 
-      const newVer = data.version || (updateState.availableUpdateInfo && updateState.availableUpdateInfo.version) || '1.3.0';
+      const newVer = data.version || (updateState.availableUpdateInfo && updateState.availableUpdateInfo.version) || '1.4.0';
       if (DOM.updateCurrentVersionText) DOM.updateCurrentVersionText.textContent = `v${updateState.currentVersion}`;
       if (DOM.updateNewVersionText) DOM.updateNewVersionText.textContent = `v${newVer}`;
 
@@ -4691,19 +4806,31 @@
     if (!DOM.updateReleaseNotesList) return;
     DOM.updateReleaseNotesList.innerHTML = '';
 
-    if (!notes) {
+    if (!notes || (typeof notes === 'string' && !notes.trim())) {
       notes = `
 - Double-Layer Navigation: Tampilan navigasi dua tingkat yang rapi, modern, dan ergonomis.
 - Icon Vector Overhaul: Seluruh emoji diganti dengan vector icons Font Awesome profesional.
 - Drag-and-Drop & Duplikat: Opsi memindahkan atau menyalin tugas harian dan inisiatif roadmap tahunan.
+- Executive PDF Reporting: Ekspor dokumen kalender dan aktivitas berkualitas tinggi.
 - Peningkatan Stabilitas: Optimasi kinerja dan responsivitas aplikasi.
       `.trim();
     }
 
-    const lines = typeof notes === 'string' ? notes.split('\n') : Array.isArray(notes) ? notes : [String(notes)];
+    let lines = [];
+    if (typeof notes === 'string') {
+      lines = notes.split('\n');
+    } else if (Array.isArray(notes)) {
+      lines = notes.map(item => {
+        if (typeof item === 'string') return item;
+        if (item && item.note) return item.note;
+        return String(item || '');
+      });
+    } else {
+      lines = [String(notes)];
+    }
 
     lines.forEach(line => {
-      const trimmed = line.trim();
+      const trimmed = String(line || '').trim();
       if (!trimmed) return;
 
       if (trimmed.startsWith('###') || trimmed.startsWith('##') || trimmed.startsWith('#')) {

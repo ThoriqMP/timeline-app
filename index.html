@@ -107,6 +107,9 @@
             <button id="checkUpdateNavBtn" class="nav-tool-btn" title="Periksa Pembaruan Sistem">
               <i class="fa-solid fa-arrows-rotate"></i>
             </button>
+            <button id="appInfoNavBtn" class="nav-tool-btn" title="Info Aplikasi TimelineFlow">
+              <i class="fa-solid fa-circle-info"></i>
+            </button>
             <button id="exportDataBtn" class="nav-tool-btn" title="Backup / Ekspor Data (JSON)">
               <i class="fa-solid fa-file-arrow-down"></i>
             </button>
@@ -1106,9 +1109,12 @@
             <span>Versi Aplikasi:</span>
             <span class="p-stat-badge font-mono" id="profileAppVersionText">v1.3.0</span>
           </div>
-          <div class="p-stat-row" style="margin-top: 6px;">
-            <button type="button" class="btn-check-update-profile" id="profileCheckUpdateBtn">
-              <i class="fa-solid fa-arrows-rotate"></i> Periksa Pembaruan
+          <div class="p-stat-row p-stat-actions" style="margin-top: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <button type="button" class="btn-check-update-profile" id="profileCheckUpdateBtn" title="Periksa Pembaruan">
+              <i class="fa-solid fa-arrows-rotate"></i> Update
+            </button>
+            <button type="button" class="btn-check-update-profile btn-info-profile" id="profileAppInfoBtn" title="Lihat Info Aplikasi">
+              <i class="fa-solid fa-circle-info"></i> Info App
             </button>
           </div>
         </div>
@@ -1278,6 +1284,111 @@
               <span>Coba Lagi</span>
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+  <!-- ================= 10. APP INFO & SYSTEM SPECIFICATION MODAL ================= -->
+  <div class="modal-backdrop modal-backdrop-confirm" id="appInfoModalOverlay">
+    <div class="modal-box modal-box-app-info">
+      <div class="modal-box-header">
+        <div class="modal-icon-title">
+          <div class="modal-icon-badge modal-icon-info-badge">
+            <i class="fa-solid fa-circle-info"></i>
+          </div>
+          <div>
+            <h3>Info Aplikasi</h3>
+            <p class="modal-desc">Spesifikasi, identitas, dan sistem TimelineFlow</p>
+          </div>
+        </div>
+        <button class="modal-btn-close" id="closeAppInfoModalBtn">&times;</button>
+      </div>
+
+      <div class="app-info-body">
+        <!-- Hero App Brand -->
+        <div class="app-info-hero">
+          <div class="app-hero-logo-wrap">
+            <img src="logo.png" alt="TimelineFlow Logo" class="app-hero-logo" onerror="this.style.display='none'; document.getElementById('appHeroFallbackIcon').style.display='flex';" />
+            <div class="app-hero-fallback-icon" id="appHeroFallbackIcon" style="display: none;">
+              <i class="fa-solid fa-timeline"></i>
+            </div>
+          </div>
+          <div class="app-hero-meta">
+            <div class="app-hero-title-row">
+              <h4 class="app-hero-title">TimelineFlow</h4>
+              <span class="app-hero-badge" id="appInfoVersionBadge">v1.4.0</span>
+              <span class="app-hero-channel-badge">Stable Release</span>
+            </div>
+            <p class="app-hero-tagline">
+              Executive Daily Planner, Annual Roadmap & Travel Itinerary Suite
+            </p>
+          </div>
+        </div>
+
+        <!-- Tech Specifications Matrix -->
+        <div class="app-spec-grid">
+          <div class="spec-card">
+            <div class="spec-label"><i class="fa-solid fa-code-branch"></i> Versi Rilis</div>
+            <div class="spec-val font-mono" id="appInfoVerText">1.4.0 (Official)</div>
+          </div>
+          <div class="spec-card">
+            <div class="spec-label"><i class="fa-solid fa-microchip"></i> Runtime Platform</div>
+            <div class="spec-val" id="appInfoPlatformText">macOS (Desktop Application)</div>
+          </div>
+          <div class="spec-card">
+            <div class="spec-label"><i class="fa-solid fa-database"></i> Penyimpanan Data</div>
+            <div class="spec-val">Local Offline-First (Enkripsi)</div>
+          </div>
+          <div class="spec-card">
+            <div class="spec-label"><i class="fa-solid fa-cloud-arrow-down"></i> Saluran Pembaruan</div>
+            <div class="spec-val">GitHub Releases Automated</div>
+          </div>
+        </div>
+
+        <!-- Highlights Features Overview -->
+        <div class="app-features-card">
+          <div class="features-card-title">
+            <i class="fa-solid fa-star"></i> Fitur & Kapabilitas Unggulan
+          </div>
+          <div class="features-pill-wrap">
+            <span class="feature-chip"><i class="fa-solid fa-calendar-day"></i> Daily Matrix Tasks</span>
+            <span class="feature-chip"><i class="fa-solid fa-bullseye"></i> Annual Roadmap & Goals</span>
+            <span class="feature-chip"><i class="fa-solid fa-plane-departure"></i> Travel Itinerary Planner</span>
+            <span class="feature-chip"><i class="fa-solid fa-arrows-up-down-left-right"></i> Drag & Duplicate Action</span>
+            <span class="feature-chip"><i class="fa-solid fa-file-pdf"></i> Executive PDF Reports</span>
+            <span class="feature-chip"><i class="fa-solid fa-arrows-rotate"></i> One-Click Auto Updates</span>
+          </div>
+        </div>
+
+        <!-- Developer Attribution & Contacts -->
+        <div class="app-developer-card">
+          <div class="dev-meta-left">
+            <div class="dev-avatar-icon">
+              <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <div>
+              <div class="dev-title-label">Lead Developer & Creator</div>
+              <div class="dev-author-name">Thoriq Muhammad Pasya</div>
+              <div class="dev-copyright-text">&copy; 2026 TimelineFlow Suite. All rights reserved.</div>
+            </div>
+          </div>
+          <div class="dev-contact-actions">
+            <a href="https://wa.me/6285155238654" target="_blank" rel="noopener noreferrer" class="btn-dev-wa" id="appInfoWaLink">
+              <i class="fa-brands fa-whatsapp"></i>
+              <span>WhatsApp Developer</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Bottom Action Buttons -->
+        <div class="app-info-actions">
+          <button type="button" class="btn-cancel" id="closeAppInfoBtn">Tutup</button>
+          <button type="button" class="btn-primary btn-gradient-update" id="appInfoCheckUpdateBtn">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span>Periksa Pembaruan Sistem</span>
+          </button>
         </div>
       </div>
     </div>
